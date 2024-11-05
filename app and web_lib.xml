@@ -1,0 +1,402 @@
+This file is a merged representation of the entire codebase, combining all repository files into a single document.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Repository structure
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+- Pay special attention to the Repository Description. These contain important context and guidelines specific to this project.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's
+  configuration.
+- Binary files are not included in this packed representation. Please refer to
+  the Repository Structure section for a complete list of file paths, including
+  binary files.
+
+- Line numbers have been added to the beginning of each line.
+</notes>
+
+</file_summary>
+
+<repository_structure>
+.gitignore
+index.html
+main.js
+package.json
+web_lib/components/NavBar.js
+web_lib/components/SlidableSheet.js
+web_lib/core/Component.js
+web_lib/core/events.js
+web_lib/core/state.js
+Z-index.css
+</repository_structure>
+
+<repository_files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+ 1: # Parcel cache and build directories
+ 2: .parcel-cache/
+ 3: dist/
+ 4: 
+ 5: # Node modules
+ 6: node_modules/
+ 7: 
+ 8: # Environment variables
+ 9: .env
+10: 
+11: # Editor directories and files
+12: .vscode/
+13: .idea/
+14: *.swp
+15: *.swo
+16: 
+17: # OS generated files
+18: .DS_Store
+19: Thumbs.db
+20: 
+21: # Logs
+22: *.log
+23: npm-debug.log*
+24: yarn-debug.log*
+25: yarn-error.log*
+26: 
+27: # Optional: Uncomment if you're using TypeScript
+28: # *.tsbuildinfo
+29: 
+30: # Optional: Uncomment if you're generating source maps
+31: # *.map
+</file>
+
+<file path="index.html">
+ 1: <!DOCTYPE html>
+ 2: <html lang="en">
+ 3: <head>
+ 4:     <meta charset="UTF-8">
+ 5:     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 6:     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+ 7:     <title>Document</title>
+ 8:     <style cssReset>
+ 9:         *,
+10:         *::before,
+11:         *::after {
+12:             margin: 0;
+13:             padding: 0;
+14:             box-sizing: border-box;
+15:             -webkit-tap-highlight-color: transparent;
+16:         }
+17:         html,
+18:         body {
+19:             height: 100%;
+20:             line-height: 1.6;
+21:             -webkit-font-smoothing: antialiased;
+22:         }
+23:         img,
+24:         picture,
+25:         video,
+26:         canvas,
+27:         svg {
+28:             display: block;
+29:             max-width: 100%;
+30:         }
+31:         input,
+32:         button,
+33:         textarea,
+34:         select {
+35:             font: inherit;
+36:         }
+37:         p,
+38:         h1,
+39:         h2,
+40:         h3,
+41:         h4,
+42:         h5,
+43:         h6 {
+44:             overflow-wrap: break-word;
+45:         }
+46:     </style>
+47:     <script type="module">
+48:         import 'web_lib/components/NavBar.js';
+49:         import 'web_lib/components/SlidableSheet.js';
+50:     </script>
+51: </head>
+52: <body>
+53:     <!-- I've used claude opus to generate these SVGs. we set the active index to 1 in the global state -->
+54:     <nav-bar items='[
+55:     {"icon": "M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"},
+56:     {"icon": "M153.3-189.06v-376.49q0-17.99 7.92-34.03 7.92-16.04 22.26-26.56l250.94-188.32q19.92-15.25 45.47-15.25 25.55 0 45.69 15.25l250.94 188.32q14.34 10.52 22.34 26.56t8 34.03v376.49q0 31.49-22.22 53.62-22.21 22.14-53.7 22.14H599.47q-16 0-26.94-10.94-10.94-10.94-10.94-26.94v-212.54q0-16-10.93-26.94-10.94-10.93-26.94-10.93h-87.44q-16 0-26.94 10.93-10.93 10.94-10.93 26.94v212.54q0 16-10.94 26.94-10.94 10.94-26.94 10.94H229.06q-31.49 0-53.62-22.14-22.14-22.13-22.14-53.62Z", "viewBox": "0 -960 960 960"},
+57:     {"icon": "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"}
+58:     ]'></nav-bar>
+59:     <script type="module">
+60:         import './main.js'
+61:     </script>
+62: </body>
+63: </html>
+</file>
+
+<file path="main.js">
+ 1: // the controller that listens to the events (by using document.addEventListener) and calls the setState method of the other components that should react to a given event.
+ 2: import { EventTypes } from 'web_lib/core/events.js';
+ 3: import { globalState } from 'web_lib/core/state.js';
+ 4: document.addEventListener(EventTypes.SCREEN_SLIDE, (e) => {
+ 5:     console.log('Main.js received SCREEN_SLIDE event:', e.detail.index);
+ 6:     globalState.activeIndex = e.detail.index;
+ 7:     const navBar = document.querySelector('nav-bar');
+ 8:     navBar.setState({ activeIndex: e.detail.index });
+ 9: });
+10: document.addEventListener(EventTypes.NAV_ITEM_SELECTED, (e) => {
+11:     console.log('Main.js received NAV_ITEM_SELECTED event:', e.detail.index);
+12:     const slidableSheet = document.querySelector('slidable-sheet');
+13:     // update the active index in global state and set the state of the slidable-sheet
+14: });
+</file>
+
+<file path="package.json">
+ 1: {
+ 2:   "devDependencies": {
+ 3:     "install": "^0.13.0",
+ 4:     "npm": "^9.8.1",
+ 5:     "parcel": "^2.9.3",
+ 6:     "posthtml-include": "^1.7.4"
+ 7:   },
+ 8:   "posthtml": {
+ 9:     "plugins": {
+10:       "posthtml-include": {}
+11:     }
+12:   },
+13:   "alias": {
+14:     "web_lib": "./web_lib/"
+15:   },
+16:   "@parcel/transformer-css": {
+17:     "drafts": {
+18:       "nesting": true
+19:     }
+20:   },
+21:   "scripts": {
+22:     "dev": "parcel --no-cache index.html",
+23:     "build": "parcel build index.html"
+24:   }
+25: }
+</file>
+
+<file path="web_lib/components/NavBar.js">
+  1: // components/NavBar.js
+  2: import { EventTypes } from '../core/events.js';
+  3: import Component from '../core/Component.js';
+  4: import { globalState } from '../core/state.js';
+  5: export default class NavBar extends Component {
+  6:     static get observedAttributes() {
+  7:         return ['items', 'active-index'];
+  8:     }
+  9:     constructor() {
+ 10:         super();
+ 11:         this.state = {
+ 12:             // Initialize with global state
+ 13:             activeIndex: globalState.activeIndex
+ 14:         };
+ 15:     }
+ 16:     connectedCallback() {
+ 17:         super.connectedCallback();
+ 18:     }
+ 19:     _processAttributes() {
+ 20:         super._processAttributes();
+ 21:         // Parse items from JSON string if provided
+ 22:         if (this.props.items) {
+ 23:             try {
+ 24:                 this.props.items = JSON.parse(this.props.items);
+ 25:             } catch (e) {
+ 26:                 console.error('Invalid items JSON in NavBar:', e);
+ 27:                 this.props.items = [];
+ 28:             }
+ 29:         }
+ 30:         // Parse active index
+ 31:         if (this.props['active-index']) {
+ 32:             this.state.activeIndex = parseInt(this.props['active-index']) || 0;
+ 33:         }
+ 34:     }
+ 35:     _attachEventListeners() {
+ 36:         this._shadow.addEventListener('click', (e) => {
+ 37:             const item = e.target.closest('.nav-item');
+ 38:             if (item) {
+ 39:                 const index = parseInt(item.dataset.index);
+ 40:                 // Update state
+ 41:                 globalState.activeIndex = index;
+ 42:                 this.setState({ activeIndex: index });
+ 43:                 // Emit event for other components
+ 44:                 const event = new CustomEvent(EventTypes.NAV_ITEM_SELECTED, {
+ 45:                     detail: { index },
+ 46:                     bubbles: true,
+ 47:                     composed: true
+ 48:                 });
+ 49:                 this.dispatchEvent(event);
+ 50:             }
+ 51:         });
+ 52:     }
+ 53:     render() {
+ 54:         let items = this.props.items || [];
+ 55:         const { activeIndex } = this.state;
+ 56:         this._createStyles(`
+ 57:             :host {
+ 58:                 display: block;
+ 59:                 position: fixed;
+ 60:                 bottom: 0;
+ 61:                 left: 0;
+ 62:                 right: 0;
+ 63:                 background: rgba(250, 250, 250, 0.95);
+ 64:                 -webkit-backdrop-filter: blur(10px);
+ 65:                 backdrop-filter: blur(10px);
+ 66:                 border-top: 0.5px solid rgba(0, 0, 0, 0.2);
+ 67:                 padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+ 68:             }
+ 69:             .nav-container {
+ 70:                 display: flex;
+ 71:                 justify-content: space-around;
+ 72:                 align-items: center;
+ 73:                 height: 55px;
+ 74:                 max-width: 500px;
+ 75:                 margin: 0 auto;
+ 76:             }
+ 77:             .nav-item {
+ 78:                 flex: 1;
+ 79:                 display: flex;
+ 80:                 justify-content: center;
+ 81:                 align-items: center;
+ 82:                 height: 100%;
+ 83:                 cursor: pointer;
+ 84:                 -webkit-tap-highlight-color: transparent;
+ 85:             }
+ 86:             .nav-icon {
+ 87:                 width: 32px;
+ 88:                 height: 32ppx;
+ 89:                 transition: color 0.2s ease;
+ 90:                 color: #8E8E93;
+ 91:             }
+ 92:             .nav-item.active .nav-icon {
+ 93:                 color: #007AFF;
+ 94:             }
+ 95:         `);
+ 96:         // we can optionally pass other viewBox values in case of using SVGs with different viewBox values (e.g., using google fonts icons that uses viewBox: "0 -960 960 960")
+ 97:         this._shadow.innerHTML = `
+ 98:             <div class="nav-container">
+ 99:                 ${items.map((item, index) => `
+100:                     <div class="nav-item ${index === activeIndex ? 'active' : ''}" data-index="${index}">
+101:                         <svg class="nav-icon" viewBox="${item.viewBox || '0 0 24 24'}" fill="currentColor">
+102:                             <path d="${item.icon}"/>
+103:                         </svg>
+104:                     </div>
+105:                 `).join('')}
+106:             </div>
+107:         `;
+108:     }
+109: }
+110: customElements.define('nav-bar', NavBar);
+</file>
+
+<file path="web_lib/components/SlidableSheet.js">
+1: // components/SlidableSheet.js
+</file>
+
+<file path="web_lib/core/Component.js">
+ 1: export default class Component extends HTMLElement {
+ 2:     constructor() {
+ 3:         super();
+ 4:         this.state = {};
+ 5:         this.props = {};
+ 6:         this._shadow = this.attachShadow({ mode: 'open' });
+ 7:     }
+ 8:     // Lifecycle methods
+ 9:     connectedCallback() {
+10:         this._processAttributes();
+11:         this.render();
+12:         this._attachEventListeners();
+13:     }
+14:     attributeChangedCallback(name, oldValue, newValue) {
+15:         if (oldValue !== newValue) {
+16:             // calling this._processAttributes() because sometimes the attributeChangedCallback is called before connectedCallback which results in rendering without processing the attributes, especially for the first load.
+17:             this._processAttributes();
+18:             this.render();
+19:         }
+20:     }
+21:     // State management
+22:     setState(newState) {
+23:         this.state = { ...this.state, ...newState };
+24:         this.render();
+25:     }
+26:     // Process attributes into props
+27:     _processAttributes() {
+28:         const attributes = this.getAttributeNames();
+29:         attributes.forEach(attr => {
+30:             const value = this.getAttribute(attr);
+31:             this.props[attr] = value;
+32:         });
+33:     }
+34:     // Abstract methods to be implemented by child classes
+35:     render() {
+36:         throw new Error('Render method must be implemented');
+37:     }
+38:     _attachEventListeners() {
+39:         // Override in child components if needed
+40:     }
+41:     // Utility methods
+42:     _createStyles(styles) {
+43:         const styleSheet = new CSSStyleSheet();
+44:         styleSheet.replaceSync(styles);
+45:         this._shadow.adoptedStyleSheets = [styleSheet];
+46:     }
+47: }
+</file>
+
+<file path="web_lib/core/events.js">
+1: // DOM expects a string for event names, so we can't just use a symbol/enum for event names.
+2: export const EventTypes = {
+3:     SCREEN_SLIDE: 'screen:slide',
+4:     NAV_ITEM_SELECTED: 'nav:item:selected',
+5: };
+6: // the consumer app should have a central controller that picks up the emitted events (by using document.addEventListener) from different components and calls the setState method of the other components that should react to a given event.
+</file>
+
+<file path="web_lib/core/state.js">
+ 1: // web_lib/core/state.js
+ 2: class GlobalState {
+ 3:     constructor() {
+ 4:         this.activeIndex = 1;
+ 5:     }
+ 6:     // Singleton instance
+ 7:     static getInstance() {
+ 8:         if (!GlobalState._instance) {
+ 9:             GlobalState._instance = new GlobalState();
+10:         }
+11:         return GlobalState._instance;
+12:     }
+13: }
+14: export const globalState = GlobalState.getInstance();
+</file>
+
+<file path="Z-index.css">
+1: /* it should be sorted from low to high  */
+</file>
+
+</repository_files>
