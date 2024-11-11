@@ -14,7 +14,8 @@ export default class NavBar extends Component {
             // Initialize with global state
             activeIndex: globalState.activeIndex
         };
-        
+        // Bind methods
+        this._handleClick = this._handleClick.bind(this);
     }
 
     connectedCallback() {
@@ -40,23 +41,29 @@ export default class NavBar extends Component {
         }
     }
 
+    _handleClick(e) {
+        const item = e.target.closest('.nav-item');
+        if (item) {
+            const index = parseInt(item.dataset.index);
+            // Update state
+            globalState.activeIndex = index;
+            this.setState({ activeIndex: index });
+            // Emit event for other components
+            const event = new CustomEvent(EventTypes.NAV_ITEM_SELECTED, {
+                detail: { index },
+                bubbles: true,
+                composed: true
+            });
+            this.dispatchEvent(event);
+        }
+    }
+
     _attachEventListeners() {
-        this._shadow.addEventListener('click', (e) => {
-            const item = e.target.closest('.nav-item');
-            if (item) {
-                const index = parseInt(item.dataset.index);
-                // Update state
-                globalState.activeIndex = index;
-                this.setState({ activeIndex: index });
-                // Emit event for other components
-                const event = new CustomEvent(EventTypes.NAV_ITEM_SELECTED, {
-                    detail: { index },
-                    bubbles: true,
-                    composed: true
-                });
-                this.dispatchEvent(event);
-            }
-        });
+        this._shadow.addEventListener('click', this._handleClick);
+    }
+
+    disconnectedCallback() {
+        this._shadow.removeEventListener('click', this._handleClick);
     }
 
     render() {
@@ -121,6 +128,8 @@ export default class NavBar extends Component {
                 `).join('')}
             </div>
         `;
+        // Attach event listeners after rendering
+        this._attachEventListeners();
     }
 }
 

@@ -1,3 +1,4 @@
+// core/Component.js
 export default class Component extends HTMLElement {
     constructor() {
         super();
@@ -23,10 +24,14 @@ export default class Component extends HTMLElement {
 
     // State management
     setState(newState, rerender = true) {
-        this.state = { ...this.state, ...newState };
-        if (rerender) {
-            this.render();
-        }
+        const potentialNewState = { ...this.state, ...newState };
+        const stateChanged = JSON.stringify(potentialNewState) !== JSON.stringify(this.state);
+        if (!stateChanged) return;
+
+        this.state = potentialNewState;
+
+        if (rerender) this.render();
+
     }
 
     // Process attributes into props
