@@ -1,12 +1,10 @@
 
 fill the screen with cards to be able to scroll vertically and test the behavior 
-document the calculations for the wrapper, host and offset
 ------
 ask claude for similar often used components
 decide which type of transition to use when navigating from a main to details screen, e.g. the settings in NGL
 
 
 
-------------------------
-offset the wrapper by: one space+ quarter pane, to offset for the first pane 
-the host should be: two spaces + two panes (the current pane and two spaces around it and half of the next and previous panes)
+
+

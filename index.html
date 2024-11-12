@@ -60,10 +60,75 @@
 
         body {
             background-color: #f0f0f0;
+            overscroll-behavior: none;
         }
 
-        #main-screens {
+        slidable-panes {
             background-color: #fff;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Horizontal scroll container for Pane 2 */
+        .horizontal-scroll {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            overflow-x: scroll;
+            scroll-snap-type: x mandatory;
+            /* contain scrolling */
+            will-change: transform;
+            overscroll-behavior-x: none;
+            pointer-events: none;
+
+
+        }
+
+        .scroll-item {
+            scroll-snap-align: start;
+            flex: 0 0 280px;
+            height: 200px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Interactive demo for Pane 3 */
+        .interactive-demo {
+            padding: 16px;
+        }
+
+        .color-box {
+            width: 100%;
+            height: 150px;
+            margin: 16px 0;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        /* Data visualization for Pane 4 */
+        .data-viz {
+            padding: 16px;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bar {
+            background: #4CAF50;
+            height: 24px;
+            border-radius: 4px;
+            transition: width 0.3s;
         }
     </style>
     <script type="module">
@@ -73,27 +138,103 @@
 </head>
 
 <body>
-    <slidable-panes id="main-screens" >
-        <div slot="pane-0">
-            <h1>Pane 1 Content</h1>
+    <slidable-panes id="test-panes" width="100%" height="80vh" wrapper-width="120%" pane-width="100vw"
+        pane-height="100%">
+        <!-- Pane 1: Many cards with variable heights -->
+        <include src="pane0.html"></include>
+
+        <!-- Pane 2: Horizontal scrolling content -->
+        <include src="pane1.html"></include>
+
+        <!-- Pane 3: Interactive content -->
+        <div slot="pane-2" class="interactive-demo">
+            <h2>Interactive Color Demo</h2>
+            <p>Click the box to change its color</p>
+            <div class="color-box" id="colorBox"></div>
+            <button onclick="changeColor()" class="btn">Change Color</button>
         </div>
-        <div slot="pane-1">
-            <h1>Pane 2 Content</h1>
-        </div>
-        <div slot="pane-2">
-            <h1>Pane 3 Content</h1>
+
+        <!-- Pane 4: Data visualization -->
+        <div slot="pane-3" class="data-viz">
+            <h2>Dynamic Bar Chart</h2>
+            <div asdf asdfkl asdkf asdfkjk aksdfjaskdjf asdkfj asdfjk asdkfj asdkjf asdfas fa fasfd asd fasd fasdf
+                assdfasf sdf>
+            </div>
         </div>
     </slidable-panes>
 
-    <!-- I've used claude opus to generate these SVGs. we set the active index to 1 in the global state -->
-    <nav-bar items='[
-    {"icon": "M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"},
-    {"icon": "M153.3-189.06v-376.49q0-17.99 7.92-34.03 7.92-16.04 22.26-26.56l250.94-188.32q19.92-15.25 45.47-15.25 25.55 0 45.69 15.25l250.94 188.32q14.34 10.52 22.34 26.56t8 34.03v376.49q0 31.49-22.22 53.62-22.21 22.14-53.7 22.14H599.47q-16 0-26.94-10.94-10.94-10.94-10.94-26.94v-212.54q0-16-10.93-26.94-10.94-10.93-26.94-10.93h-87.44q-16 0-26.94 10.93-10.93 10.94-10.93 26.94v212.54q0 16-10.94 26.94-10.94 10.94-26.94 10.94H229.06q-31.49 0-53.62-22.14-22.14-22.13-22.14-53.62Z", "viewBox": "0 -960 960 960"},
-    {"icon": "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"}
-    ]'></nav-bar>
 
-    <script type="module">
-        import './main.js'
+
+
+    <script>
+        function createCards() {
+            const container = document.getElementById('cardsContainer');
+            for (let i = 0; i < 10; i++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.height = `${100 + Math.random() * 150}px`;
+                card.innerHTML = `
+                    <h3>Card ${i + 1}</h3>
+                    <p>Variable height content card</p>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        // Generate scroll items for Pane 2
+
+
+
+
+
+
+        function createScrollItems() {
+            const gallery = document.getElementById('scrollGallery');
+            for (let i = 0; i < 8; i++) {
+                const item = document.createElement('div');
+                item.className = 'scroll-item';
+                item.innerHTML = `
+                    <h3>Item ${i + 1}</h3>
+                    <p>Horizontally scrollable content</p>
+                `;
+                gallery.appendChild(item);
+            }
+
+            gallery.addEventListener('pointerdown', (e) => {
+                // Only stop propagation if there's room to scroll
+                if (gallery.scrollWidth > gallery.clientWidth) {
+                    e.stopPropagation();
+                }
+            });
+        }
+
+
+
+        // Generate bars for Pane 4
+        function createBars() {
+            const chart = document.getElementById('barChart');
+            for (let i = 0; i < 5; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.width = `${20 + Math.random() * 80}%`;
+                chart.appendChild(bar);
+            }
+        }
+
+        // Interactive demo functionality
+        function changeColor() {
+            const colors = ['#FF9800', '#2196F3', '#4CAF50', '#9C27B0', '#F44336'];
+            const box = document.getElementById('colorBox');
+            box.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Initialize everything when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            createCards();
+            createScrollItems();
+            createBars();
+            changeColor(); // Initial color
+        });
     </script>
 </body>
 

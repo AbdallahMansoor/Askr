@@ -1,3 +1,5 @@
+
+
 // components/SlidableSheet.js
 import { EventTypes } from '../core/events.js';
 import Component from '../core/Component.js';
