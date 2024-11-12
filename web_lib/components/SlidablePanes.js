@@ -1,3 +1,8 @@
+//- the initial offset can be changed to any value or zero directly in the code.I defaulted it to be: quarter pane + one space, so that starting from the second pane it will be centered and the quarter of the adjacent panes will be visible on both sides. (assuming that the host width is: one and a half pane + two spaces)
+// --------------------------------------------------------------------
+
+
+
 // components/SlidableSheet.js
 import { EventTypes } from '../core/events.js';
 import Component from '../core/Component.js';
