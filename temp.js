@@ -73,7 +73,6 @@ export default class Component extends HTMLElement {
 }
 
 
-
 /* To achieve the pattern where the active element is centered (within the the slider parent) and the adjacent elements are partially visible on the sides, these are the equations that correlate the different variables:
 assuming that we are using the same length unit(vw, px, etc), h is the width of the slider parent/host, t is the total width of the slider, e is the width of one element, n is the number of elements, s is the space between elements, p is the portion of x that will be visible on either one of the adjacent elements, and i is the initial offset of the slider: h=(1+2p)e+2s, t=e*n+s*(n-1), i=e*p+s. we usually start by deciding the s and p values, then we can proceed from there.
 */
@@ -87,7 +86,8 @@ export default class ElementsSlider extends Component {
     // browser will automatically check observedAttributes when attributeChangedCallback is fired
     static get observedAttributes() {
         return [
-            'active-index'
+            'active-index',
+            'visible-portion'
         ];
     }
 
@@ -107,6 +107,7 @@ export default class ElementsSlider extends Component {
             computedElementWidth: 0,
             spaceBetweenElements: 0,
             initialOffset: 0,
+            visiblePortion: 0.25
         };
 
     }
@@ -140,9 +141,8 @@ export default class ElementsSlider extends Component {
         const totalElementsWidth = elements.length * computedElementWidth;
         const extraSpace = Math.max(0, sliderWidth - totalElementsWidth);
         const spaceBetweenElements = extraSpace / (elements.length - 1);
-        // p is the portion of x that will be visible on either one of the adjacent elements.
 
-        const initialOffset = extraSpace > 0 ? computedElementWidth * 0.25 + spaceBetweenElements : 0;
+        const initialOffset = extraSpace > 0 ? computedElementWidth * this.state.visiblePortion + spaceBetweenElements : 0;
 
         this.setState({
             computedElementWidth,
@@ -220,7 +220,34 @@ export default class ElementsSlider extends Component {
         this.goToElement(this.state.activeIndex - 1, animate);
     }
 
+    _shouldHandleInteraction(element) {
+        // ensure we are not clicking within a nested slider
+        if (element.closest('elements-slider') !== this) {
+            return false;
+        }
+
+        // Check if any parent (up to this slider) is scrollable horizontally
+        let current = element;
+        while (current && current !== this) {
+            const style = window.getComputedStyle(current);
+            const canScroll = ['auto', 'scroll'].includes(style.overflowX) ||
+                ['auto', 'scroll'].includes(style.overflow);
+
+            if (canScroll && current.scrollWidth > current.clientWidth) {
+                return false;
+            }
+            current = current.parentElement;
+        }
+
+        return true;
+    }
+
+
     _handlePointerDown = (e) => {
+
+        if (!this._shouldHandleInteraction(e.target)) {
+            return;
+        }
         // Capture the pointer to ensure all events go to this element
         e.target.setPointerCapture(e.pointerId);
 
@@ -343,7 +370,6 @@ export default class ElementsSlider extends Component {
                 :host {
                     display: block;    /* Allows component to follow normal flow */
                     position: relative; /* Reference for inner absolutely positioned elements */
-                    overflow: hidden;  /* Contain sliding elements */
                     box-sizing: border-box;
                     touch-action: pan-y;
                     cursor: grab;
@@ -377,6 +403,9 @@ export default class ElementsSlider extends Component {
 }
 
 customElements.define('elements-slider', ElementsSlider);
+
+
+
 // components/NavBar.js
 // components/NavBar.js
 import { EventTypes } from '../core/events.js';
@@ -384,6 +413,7 @@ import Component from '../core/Component.js';
 import { globalState } from '../core/state.js';
 
 export default class NavBar extends Component {
+    // browser will automatically check observedAttributes when attributeChangedCallback is fired
     static get observedAttributes() {
         return ['items', 'active-index'];
     }
@@ -396,29 +426,6 @@ export default class NavBar extends Component {
         };
         // Bind methods
         this._handleClick = this._handleClick.bind(this);
-    }
-
-    connectedCallback() {
-        super.connectedCallback();
-
-    }
-
-    _processAttributes() {
-        super._processAttributes();
-        // Parse items from JSON string if provided
-        if (this.props.items) {
-            try {
-                this.props.items = JSON.parse(this.props.items);
-
-            } catch (e) {
-                console.error('Invalid items JSON in NavBar:', e);
-                this.props.items = [];
-            }
-        }
-        // Parse active index
-        if (this.props['active-index']) {
-            this.state.activeIndex = parseInt(this.props['active-index']) || 0;
-        }
     }
 
     _handleClick(e) {
@@ -442,79 +449,80 @@ export default class NavBar extends Component {
         this._shadow.addEventListener('click', this._handleClick);
     }
 
-    disconnectedCallback() {
+    _removeEventListeners() {
         this._shadow.removeEventListener('click', this._handleClick);
     }
 
-    render() {
-        let items = this.props.items || [];
-        const { activeIndex } = this.state;
-
-        this._createStyles(`
-            :host {
-                display: block;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: rgba(250, 250, 250, 0.95);
-                -webkit-backdrop-filter: blur(10px);
-                backdrop-filter: blur(10px);
-                border-top: 0.5px solid rgba(0, 0, 0, 0.2);
-                padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-            }
-
-            .nav-container {
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-                height: 55px;
-                max-width: 500px;
-                margin: 0 auto;
-            }
-
-            .nav-item {
-                flex: 1;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100%;
-                cursor: pointer;
-                -webkit-tap-highlight-color: transparent;
-            }
-
-            .nav-icon {
-                width: 32px;
-                height: 32ppx;
-                transition: color 0.2s ease;
-                color: #8E8E93;
-            }
-
-            .nav-item.active .nav-icon {
-                color: #007AFF;
-            }
-        `);
-
-
-        // we can optionally pass other viewBox values in case of using SVGs with different viewBox values (e.g., using google fonts icons that uses viewBox: "0 -960 960 960")
+    _createDOM() {
         this._shadow.innerHTML = `
+            <style>
+                :host {
+                    display: block;
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    background: rgba(250, 250, 250, 0.95);
+                    -webkit-backdrop-filter: blur(10px);
+                    backdrop-filter: blur(10px);
+                    border-top: 0.5px solid rgba(0, 0, 0, 0.2);
+                    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                }
+
+                .nav-container {
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                    height: 55px;
+                    max-width: 500px;
+                    margin: 0 auto;
+                }
+
+                .nav-item {
+                    flex: 1;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100%;
+                    cursor: pointer;
+                    -webkit-tap-highlight-color: transparent;
+                }
+
+                .nav-icon {
+                    width: 32px;
+                    height: 32px;
+                    transition: color 0.2s ease;
+                    color: #8E8E93;
+                }
+
+                .nav-item.active .nav-icon {
+                    color: #007AFF;
+                }
+            </style>
+
             <div class="nav-container">
-                ${items.map((item, index) => `
-                    <div class="nav-item ${index === activeIndex ? 'active' : ''}" data-index="${index}">
+                ${(() => {
+                // Parse items from state when needed
+                let items = [];
+                try {
+                    items = this.state.items ? JSON.parse(this.state.items) : [];
+                } catch (e) {
+                    console.error('Invalid items JSON in NavBar:', e);
+                }
+                return items.map((item, index) => `
+                    <div class="nav-item ${index === this.state.activeIndex ? 'active' : ''}" data-index="${index}">
                         <svg class="nav-icon" viewBox="${item.viewBox || '0 0 24 24'}" fill="currentColor">
                             <path d="${item.icon}"/>
                         </svg>
                     </div>
-                `).join('')}
+                `).join('')
+            })()}
             </div>
         `;
-        // Attach event listeners after rendering
-        this._attachEventListeners();
     }
 }
 
 customElements.define('nav-bar', NavBar);
-
 // index.html
 < !DOCTYPE html >
     <html lang="en">
@@ -537,7 +545,7 @@ customElements.define('nav-bar', NavBar);
                             html,
                             body {
                                 height: 100%;
-                            width: 100%;
+                            width: 100vw;
                             line-height: 1.6;
                             -webkit-font-smoothing: antialiased;
                             overflow-x: hidden;
@@ -570,61 +578,197 @@ customElements.define('nav-bar', NavBar);
         }
 
 
-                            /* add different nice background colors to each page */
-                            .page:nth-child(1) {
-                                background - color: #f1c40f;
-        }
-
-                            .page:nth-child(2) {
-                                background - color: #e74c3c;
-        }
-
-                            .page:nth-child(3) {
-                                background - color: #3498db;
-        }
-
-                            /* select custom element direct children */
-                            elements-slider {
-                                width: 198vw;
+                            #main-slider {
+                                width: 291vw;
                             height: 100vh;
-            >div{
-                                width: 66vw;
+        }
+
+
+
+                            .page {
+                                width: 100vw;
                             height: 100vh;
-            }
+                            overflow-y: auto;
+        }
+
+                            /* Distinct background colors for pages */
+                            .page-1 {
+                                background - color: #FFE5E5;  /* Light pink */
+        }
+
+                            .page-2 {
+                                background - color: #E5FFE5;  /* Light green */
+            
+        }
+
+                            .page-3 {
+                                background - color: #E5E5FF;  /* Light blue */
+        }
+
+                            .page-4 {
+                                background - color: #FFF5E5;  /* Light orange */
+        }
+
+                            .card {
+                                background: white;
+                            border-radius: 12px;
+                            margin-bottom: 16px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+                            .horizontal-scroll {
+                                display: flex;
+                            overflow-x: auto;
+                            gap: 16px;
+                            -webkit-overflow-scrolling: touch;
+            
+        }
+
+                            .scroll-item {
+                                flex: 0 0 200px;
+                            height: 150px;
+                            background: white;
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+                            #nested-slider {
+                                width: 146vw;
+                            height: 50vh;
+                            background: white;
+        }
+
+                            .nested-page {
+                                width: 45vw;
+                            height: 50vh;
+        }
+
+                            .interactive-container {
+                                display: grid;
+                            grid-template-columns: repeat(2, 1fr);
+                            gap: 16px;
+        }
+
+                            .interactive-box {
+                                aspect - ratio: 1;
+                            background: white;
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 20px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
                         </style>
                         <script type="module">
-        // import 'web_lib/components/NavBar.js';
+                            import 'web_lib/components/NavBar.js';
                             import 'web_lib/components/ElementsSlider.js';
                         </script>
                     </head>
 
                     <body>
-                        <elements-slider>
-                            <!-- here goes the three pages with simple content -->
-                            <div class="page">
-                                <h1>Page 1</h1>
-                                <p>Content of page 1</p>
+                        <elements-slider id="main-slider" visible-portion="0.15">
+                            <!-- Page 1: Lots of scrollable cards -->
+                            <div class="page page-1">
+                                <h2>Scrollable Cards</h2>
+                                <div class="card">
+                                    <h3>Card 1</h3>
+                                    <p>This is a card with some content. You can scroll through these vertically.</p>
+                                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Card 2</h3>
+                                    <p>Another card with different content to test scrolling.</p>
+                                    <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Card 3</h3>
+                                    <p>Yet another card to ensure we have enough scrollable content.</p>
+                                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+                                </div>
+                                <!-- Add more cards manually -->
+                                <div class="card">
+                                    <h3>Card 4</h3>
+                                    <p>Testing vertical scroll behavior within the slider.</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Card 5</h3>
+                                    <p>Making sure we have enough content to scroll.</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Card 6</h3>
+                                    <p>Scrolling is fun!</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Card 7</h3>
+                                    <p>Scrolling is fun!</p>
+                                </div>
+                                <div class="card">
+                                    <h3>Card 8</h3>
+                                    <p>Scrolling is fun!</p>
+                                </div>
                             </div>
-                            <div class="page">
-                                <h1>Page 2</h1>
-                                <p>Content of page 2</p>
+
+                            <!-- Page 2: Horizontal scrolling content -->
+                            <div class="page page-2">
+                                <h2>Horizontal Scroll Test</h2>
+                                <p>Try scrolling this section horizontally:</p>
+                                <div class="horizontal-scroll">
+                                    <div class="scroll-item">Scroll Item 1</div>
+                                    <div class="scroll-item">Scroll Item 2</div>
+                                    <div class="scroll-item">Scroll Item 3</div>
+                                    <div class="scroll-item">Scroll Item 4</div>
+                                    <div class="scroll-item">Scroll Item 5</div>
+                                    <div class="scroll-item">Scroll Item 6</div>
+                                    <div class="scroll-item">Scroll Item 7</div>
+                                    <div class="scroll-item">Scroll Item 8</div>
+                                </div>
+                                <p>Content below the horizontal scroll</p>
+                                <p>This tests how the slider handles nested horizontal scrolling elements.</p>
                             </div>
-                            <div class="page">
-                                <h1>Page 3</h1>
-                                <p>Content of page 3</p>
+
+                            <!-- Page 3: Nested ElementsSlider -->
+                            <div class="page page-3">
+                                <h2>Nested Slider Test</h2>
+                                <p>This page contains another elements-slider:</p>
+                                <elements-slider id="nested-slider" visible-portion="0.15">
+                                    <div class="nested-page" style="background-color: #007bff;">Nested 1</div>
+                                    <div class="nested-page" style="background-color: #28a745;">Nested 2</div>
+                                    <div class="nested-page" style="background-color: #dc3545;">Nested 3</div>
+                                </elements-slider>
+                                <p style="margin-top: 20px;">Content below the nested slider</p>
+                            </div>
+
+                            <!-- Page 4: Simple content -->
+                            <div class="page page-4">
+                                <h2>Simple Content Page</h2>
+                                <div class="interactive-container">
+                                    <div class="interactive-box">Box 1</div>
+                                    <div class="interactive-box">Box 2</div>
+                                    <div class="interactive-box">Box 3</div>
+                                    <div class="interactive-box">Box 4</div>
+                                </div>
                             </div>
                         </elements-slider>
 
-                        <!-- <nav-bar items='[
+                        <nav-bar items='[
         {"icon": "M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"},
         {"icon": "M153.3-189.06v-376.49q0-17.99 7.92-34.03 7.92-16.04 22.26-26.56l250.94-188.32q19.92-15.25 45.47-15.25 25.55 0 45.69 15.25l250.94 188.32q14.34 10.52 22.34 26.56t8 34.03v376.49q0 31.49-22.22 53.62-22.21 22.14-53.7 22.14H599.47q-16 0-26.94-10.94-10.94-10.94-10.94-26.94v-212.54q0-16-10.93-26.94-10.94-10.93-26.94-10.93h-87.44q-16 0-26.94 10.93-10.93 10.94-10.93 26.94v212.54q0 16-10.94 26.94-10.94 10.94-26.94 10.94H229.06q-31.49 0-53.62-22.14-22.14-22.13-22.14-53.62Z", "viewBox": "0 -960 960 960"},
         {"icon": "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"}
-        ]'></nav-bar> -->
+        ]'></nav-bar>
 
                         <script type="module">
                             import './main.js'
                         </script>
-                    </body>
 
-                </html>
+
+
+                    </script>
+
+
+                </body>
+
+            </html>

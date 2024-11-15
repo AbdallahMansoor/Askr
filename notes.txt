@@ -1,5 +1,3 @@
-fill the screen with cards to be able to scroll vertically and test the behavior 
-------
 ask claude for similar often used components
 decide which type of transition to use when navigating from a main to details screen, e.g. the settings in NGL
 
