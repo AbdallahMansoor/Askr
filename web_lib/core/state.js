@@ -1,7 +1,7 @@
 // web_lib/core/state.js
 class GlobalState {
     constructor() {
-        this.activeIndex = 1;
+        this.activeIndex = 2;
     }
     
     // Singleton instance

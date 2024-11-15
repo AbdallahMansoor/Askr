@@ -19,8 +19,10 @@
         html,
         body {
             height: 100%;
+            width: 100vw;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
         img,
@@ -49,193 +51,195 @@
             overflow-wrap: break-word;
         }
 
-        /* center the slidable panes in the middle of the screen */
-        /* #main-screens {
-            margin: auto;
-            position: relative;
-            top: 25%;
-            
-        } */
-        /* add background color to the body and the slidable panes */
 
-        body {
-            background-color: #f0f0f0;
-            overscroll-behavior: none;
+        #main-slider {
+            width: 291vw;
+            height: 100vh;
         }
 
-        slidable-panes {
-            background-color: #fff;
+        
+
+        .page {
+            width: 69vw;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* Distinct background colors for pages */
+        .page-1 {
+            background-color: #FFE5E5;  /* Light pink */
+        }
+
+        .page-2 {
+            background-color: #E5FFE5;  /* Light green */
+            
+        }
+
+        .page-3 {
+            background-color: #E5E5FF;  /* Light blue */
+        }
+
+        .page-4 {
+            background-color: #FFF5E5;  /* Light orange */
         }
 
         .card {
             background: white;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Horizontal scroll container for Pane 2 */
         .horizontal-scroll {
             display: flex;
+            overflow-x: auto;
             gap: 16px;
-            padding: 16px;
-            overflow-x: scroll;
-            scroll-snap-type: x mandatory;
-            /* contain scrolling */
-            will-change: transform;
-            overscroll-behavior-x: none;
-            pointer-events: none;
-
-
+            -webkit-overflow-scrolling: touch;
+            
         }
 
         .scroll-item {
-            scroll-snap-align: start;
-            flex: 0 0 280px;
-            height: 200px;
-            background: white;
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Interactive demo for Pane 3 */
-        .interactive-demo {
-            padding: 16px;
-        }
-
-        .color-box {
-            width: 100%;
+            flex: 0 0 200px;
             height: 150px;
-            margin: 16px 0;
-            border-radius: 8px;
-            transition: background-color 0.3s;
-        }
-
-        /* Data visualization for Pane 4 */
-        .data-viz {
-            padding: 16px;
-        }
-
-        .bar-chart {
+            background: white;
+            border-radius: 12px;
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .bar {
-            background: #4CAF50;
-            height: 24px;
-            border-radius: 4px;
-            transition: width 0.3s;
+        #nested-slider {
+            width: 146vw;
+            height: 50vh;
+            background: white;
+        }
+
+        .nested-page {
+            width: 45vw;
+            height: 50vh;
+        }
+
+        .interactive-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .interactive-box {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
     <script type="module">
-        import 'web_lib/components/NavBar.js';
-        import 'web_lib/components/SlidablePanes.js';
+        // import 'web_lib/components/NavBar.js';
+        import 'web_lib/components/ElementsSlider.js';
     </script>
 </head>
 
 <body>
-    <slidable-panes id="test-panes" width="100%" height="80vh" wrapper-width="120%" pane-width="100vw"
-        pane-height="100%">
-        <!-- Pane 1: Many cards with variable heights -->
-        <include src="pane0.html"></include>
-
-        <!-- Pane 2: Horizontal scrolling content -->
-        <include src="pane1.html"></include>
-
-        <!-- Pane 3: Interactive content -->
-        <div slot="pane-2" class="interactive-demo">
-            <h2>Interactive Color Demo</h2>
-            <p>Click the box to change its color</p>
-            <div class="color-box" id="colorBox"></div>
-            <button onclick="changeColor()" class="btn">Change Color</button>
-        </div>
-
-        <!-- Pane 4: Data visualization -->
-        <div slot="pane-3" class="data-viz">
-            <h2>Dynamic Bar Chart</h2>
-            <div asdf asdfkl asdkf asdfkjk aksdfjaskdjf asdkfj asdfjk asdkfj asdkjf asdfas fa fasfd asd fasd fasdf
-                assdfasf sdf>
+    <elements-slider id="main-slider" visible-portion="0.15">
+        <!-- Page 1: Lots of scrollable cards -->
+        <div class="page page-1">
+            <h2>Scrollable Cards</h2>
+            <div class="card">
+                <h3>Card 1</h3>
+                <p>This is a card with some content. You can scroll through these vertically.</p>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            </div>
+            <div class="card">
+                <h3>Card 2</h3>
+                <p>Another card with different content to test scrolling.</p>
+                <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            </div>
+            <div class="card">
+                <h3>Card 3</h3>
+                <p>Yet another card to ensure we have enough scrollable content.</p>
+                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+            </div>
+            <!-- Add more cards manually -->
+            <div class="card">
+                <h3>Card 4</h3>
+                <p>Testing vertical scroll behavior within the slider.</p>
+            </div>
+            <div class="card">
+                <h3>Card 5</h3>
+                <p>Making sure we have enough content to scroll.</p>
+            </div>
+            <div class="card">
+                <h3>Card 6</h3>
+                <p>Scrolling is fun!</p>
+            </div>
+            <div class="card">
+                <h3>Card 7</h3>
+                <p>Scrolling is fun!</p>
+            </div>
+            <div class="card">
+                <h3>Card 8</h3>
+                <p>Scrolling is fun!</p>
             </div>
         </div>
-    </slidable-panes>
 
+        <!-- Page 2: Horizontal scrolling content -->
+        <div class="page page-2">
+            <h2>Horizontal Scroll Test</h2>
+            <p>Try scrolling this section horizontally:</p>
+            <div class="horizontal-scroll">
+                <div class="scroll-item">Scroll Item 1</div>
+                <div class="scroll-item">Scroll Item 2</div>
+                <div class="scroll-item">Scroll Item 3</div>
+                <div class="scroll-item">Scroll Item 4</div>
+                <div class="scroll-item">Scroll Item 5</div>
+                <div class="scroll-item">Scroll Item 6</div>
+                <div class="scroll-item">Scroll Item 7</div>
+                <div class="scroll-item">Scroll Item 8</div>
+            </div>
+            <p>Content below the horizontal scroll</p>
+            <p>This tests how the slider handles nested horizontal scrolling elements.</p>
+        </div>
 
+        <!-- Page 3: Nested ElementsSlider -->
+        <div class="page page-3">
+            <h2>Nested Slider Test</h2>
+            <p>This page contains another elements-slider:</p>
+                <elements-slider id="nested-slider" visible-portion="0.15">
+                    <div class="nested-page" style="background-color: #007bff;">Nested 1</div>
+                    <div class="nested-page" style="background-color: #28a745;">Nested 2</div>
+                    <div class="nested-page" style="background-color: #dc3545;">Nested 3</div>
+                </elements-slider>
+            <p style="margin-top: 20px;">Content below the nested slider</p>
+        </div>
 
-
+        <!-- Page 4: Simple content -->
+        <div class="page page-4">
+            <h2>Simple Content Page</h2>
+            <div class="interactive-container">
+                <div class="interactive-box">Box 1</div>
+                <div class="interactive-box">Box 2</div>
+                <div class="interactive-box">Box 3</div>
+                <div class="interactive-box">Box 4</div>
+            </div>
+        </div>
+    </elements-slider>
+ 
+    <!-- stop event propagation when we scroll in the horizontally scraollabe div -->
     <script>
-        function createCards() {
-            const container = document.getElementById('cardsContainer');
-            for (let i = 0; i < 10; i++) {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.style.height = `${100 + Math.random() * 150}px`;
-                card.innerHTML = `
-                    <h3>Card ${i + 1}</h3>
-                    <p>Variable height content card</p>
-                `;
-                container.appendChild(card);
-            }
-        }
+        const horizontalScroll = document.querySelector('.horizontal-scroll');
 
-        // Generate scroll items for Pane 2
-
-
-
-
-
-
-        function createScrollItems() {
-            const gallery = document.getElementById('scrollGallery');
-            for (let i = 0; i < 8; i++) {
-                const item = document.createElement('div');
-                item.className = 'scroll-item';
-                item.innerHTML = `
-                    <h3>Item ${i + 1}</h3>
-                    <p>Horizontally scrollable content</p>
-                `;
-                gallery.appendChild(item);
-            }
-
-            gallery.addEventListener('pointerdown', (e) => {
-                // Only stop propagation if there's room to scroll
-                if (gallery.scrollWidth > gallery.clientWidth) {
-                    e.stopPropagation();
-                }
-            });
-        }
-
-
-
-        // Generate bars for Pane 4
-        function createBars() {
-            const chart = document.getElementById('barChart');
-            for (let i = 0; i < 5; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.style.width = `${20 + Math.random() * 80}%`;
-                chart.appendChild(bar);
-            }
-        }
-
-        // Interactive demo functionality
-        function changeColor() {
-            const colors = ['#FF9800', '#2196F3', '#4CAF50', '#9C27B0', '#F44336'];
-            const box = document.getElementById('colorBox');
-            box.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        // Initialize everything when the DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            createCards();
-            createScrollItems();
-            createBars();
-            changeColor(); // Initial color
+        horizontalScroll.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
         });
+
+        
     </script>
+
+    
 </body>
 
 </html>

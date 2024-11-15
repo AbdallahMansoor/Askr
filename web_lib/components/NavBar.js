@@ -4,6 +4,7 @@ import Component from '../core/Component.js';
 import { globalState } from '../core/state.js';
 
 export default class NavBar extends Component {
+    // browser will automatically check observedAttributes when attributeChangedCallback is fired
     static get observedAttributes() {
         return ['items', 'active-index'];
     }

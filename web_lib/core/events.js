@@ -1,6 +1,6 @@
 // DOM expects a string for event names, so we can't just use a symbol/enum for event names.
 export const EventTypes = {
-    PANE_SLIDE: 'pane:slide',
+    ELEMENT_SLIDE: 'element-slide',
     NAV_ITEM_SELECTED: 'nav:item:selected',
 };
 

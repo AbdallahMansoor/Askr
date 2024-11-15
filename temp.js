@@ -1,21 +1,93 @@
+// core/Component.js
+export default class Component extends HTMLElement {
+    constructor() {
+        super();
+        this.state = {};
+        this._shadow = this.attachShadow({ mode: 'open' });
+    }
 
+    // Lifecycle methods
+    connectedCallback() {
+        this.render();
+    }
+
+    disconnectedCallback() {
+        this._removeEventListeners();
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue === newValue) return;
+        // Convert kebab-case to camelCase 
+        const camelCase = name.replace(/-([a-z])/g, g => g[1].toUpperCase());
+        this.setState({ [camelCase]: newValue });
+    }
+
+    setState(newState, rerender = true) {
+        const potentialNewState = { ...this.state, ...newState };
+        const stateChanged = JSON.stringify(potentialNewState) !== JSON.stringify(this.state);
+        if (!stateChanged) return;
+
+        this.state = potentialNewState;
+
+        if (rerender) this.render();
+
+    }
+
+    // Abstract methods to be implemented by child classes
+    render() {
+        this._createDOM();
+        // use requestAnimationFrame to ensure elements are laid out before calculating or setting up layout
+        requestAnimationFrame(() => {
+            this._setupLayout();
+            this._attachEventListeners();
+        });
+    }
+
+    _createDOM() {
+        // Override in child components if needed
+    }
+
+    _setupLayout() {
+        // Override in child components if needed
+    }
+
+    _attachEventListeners() {
+        // Override in child components if needed
+    }
+
+    _removeEventListeners() {
+        // Override in child components if needed
+    }
+
+    // Utility methods
+    _createStyles(styles, target = 'shadow') {
+        const styleSheet = new CSSStyleSheet();
+        styleSheet.replaceSync(styles);
+        if (target === 'shadow') {
+            this._shadow.adoptedStyleSheets = [styleSheet];
+        } else {
+            // in case we need to style any elements within slotted and avoid the limitations of ::slotted() selector.
+            document.adoptedStyleSheets = [...document.adoptedStyleSheets, styleSheet];
+        }
+    }
+}
+
+
+
+/* To achieve the pattern where the active element is centered (within the the slider parent) and the adjacent elements are partially visible on the sides, these are the equations that correlate the different variables:
+assuming that we are using the same length unit(vw, px, etc), h is the width of the slider parent/host, t is the total width of the slider, e is the width of one element, n is the number of elements, s is the space between elements, p is the portion of x that will be visible on either one of the adjacent elements, and i is the initial offset of the slider: h=(1+2p)e+2s, t=e*n+s*(n-1), i=e*p+s. we usually start by deciding the s and p values, then we can proceed from there.
+*/
 
 // components/SlidableSheet.js
 import { EventTypes } from '../core/events.js';
 import Component from '../core/Component.js';
 import { globalState } from '../core/state.js';
 
-export default class SlidablePanes extends Component {
+export default class ElementsSlider extends Component {
+    // browser will automatically check observedAttributes when attributeChangedCallback is fired
     static get observedAttributes() {
         return [
-            'active-index',
-            'width',         // Host element width (e.g., "800px", "100%", "auto")
-            'height',        // Host element height
-            'wrapper-width',
-            'wrapper-height',
-            'pane-width',    // Individual pane width
-            'pane-height',   // Individual pane height
-            'padding'       // Padding inside panes
+            'active-index'
         ];
     }
 
@@ -28,179 +100,110 @@ export default class SlidablePanes extends Component {
             startX: null,
             startY: null,
             currentX: null,
-            // sheet positions relative to its initial state in the DOM.
-            sheetLastPosition: null,
-            sheetNewPosition: null,
+            sliderLastPosition: null,
+            sliderNewPosition: null,
             dragStartTime: null,
-            totalPanes: 3, // Default value
-            width: '100%',
-            height: '100%',
-            wrapperWidth: '100%',
-            wrapperHeight: '100%',
-            paneWidth: '100%',
-            paneHeight: '100%',
-            padding: '0px',
-            spaceBetweenPanes: 0,
-            computedPaneWidth: 0,   // Actual pixel width of panes
-            initialOffset: 0,       // Initial offset to center panes
-        };
-        // Create observer to watch for slot changes
-        this._slotObserver = new MutationObserver(this._handleSlotChanges);
-
-    }
-
-    get _container() {
-        return this._shadow.querySelector('.wrapper');
-    }
-
-    _handleSlotChanges = (mutations) => {
-        const newTotalPanes = this._countSlottedPanes();
-        if (newTotalPanes !== this.state.totalPanes) {
-            this.setState({ totalPanes: newTotalPanes });
-        }
-    };
-
-    _countSlottedPanes() {
-        // Count elements with slot attributes matching our pattern
-        return this.querySelectorAll('[slot^="pane-"]').length;
-    }
-
-    _startObserving() {
-        // Observe both direct children additions/removals and attribute changes
-        this._slotObserver.observe(this, {
-            childList: true,
-            attributes: true,
-            attributeFilter: ['slot'],
-            subtree: false
-        });
-    }
-
-    connectedCallback() {
-
-
-        super.connectedCallback();
-
-        // Start observing for changes
-        this._startObserving();
-
-        // use requestAnimationFrame to ensure the element is in the DOM before calculating layout
-        requestAnimationFrame(() => {
-            this._calculateLayout();
-        });
-    }
-
-    disconnectedCallback() {
-        if (this._container) {
-            this._container.removeEventListener('pointerdown', this._handlePointerDown);
-            this._container.removeEventListener('pointermove', this._handlePointerMove);
-            this._container.removeEventListener('pointerup', this._handlePointerUp);
-            this._container.removeEventListener('pointercancel', this._handlePointerUp);
-        }
-    }
-
-    _processAttributes() {
-        super._processAttributes();
-
-        const newState = {
-            width: this.props.width || this.state.width,
-            height: this.props.height || this.state.height,
-            wrapperWidth: this.props['wrapper-width'] || this.state.wrapperWidth,
-            wrapperHeight: this.props['wrapper-height'] || this.state.wrapperHeight,
-            paneWidth: this.props['pane-width'] || this.state.paneWidth,
-            paneHeight: this.props['pane-height'] || this.state.paneHeight,
-            padding: this.props.padding || this.state.padding
+            totalElements: null,
+            computedElementWidth: 0,
+            spaceBetweenElements: 0,
+            initialOffset: 0,
         };
 
-        // Use setState to ensure proper layout recalculation
-        this.setState(newState, false);
     }
 
 
     setState(newState, rerender = true) {
-        const layoutProperties = [
-            'totalPanes', 'width', 'height', 'wrapperWidth', 'wrapperHeight', 'paneWidth', 'paneHeight', 'padding'
-        ];
 
-        const needsLayoutRecalculation = layoutProperties.some(prop => prop in newState);
 
-        if (needsLayoutRecalculation) {
-            // First update state and render
+        // Check if activeIndex is being updated
+        if ('activeIndex' in newState && newState.activeIndex !== this.state.activeIndex) {
             super.setState(newState, rerender);
-            // Then calculate layout after browser has processed the render
-            requestAnimationFrame(() => {
-                this._calculateLayout();
-            });
+            // Animate to new index first
+            this.goToElement(newState.activeIndex);
             return;
         }
 
         super.setState(newState, rerender);
-        if ('activeIndex' in newState) {
-            this.goToPane(newState.activeIndex);
-        }
     }
 
 
-    _calculateLayout() {
-        if (!this._container) return;
+    _setupLayout() {
+        const elements = this.children;
+        if (elements.length === 0) return;
 
-        const paneElements = this._container.querySelectorAll('.pane');
-        const wrapperWidth = this._container.offsetWidth;
-        const computedPaneWidth = paneElements[0].offsetWidth;
-        const totalPanesWidth = this.state.totalPanes * computedPaneWidth;
+        // Update total elements count if needed
+        if (this.state.totalElements !== elements.length) {
+            this.setState({ totalElements: elements.length }, false);
+        }
+        const sliderWidth = this.offsetWidth;
+        const computedElementWidth = elements[0].offsetWidth;
+        const totalElementsWidth = elements.length * computedElementWidth;
+        const extraSpace = Math.max(0, sliderWidth - totalElementsWidth);
+        const spaceBetweenElements = extraSpace / (elements.length - 1);
+        // p is the portion of x that will be visible on either one of the adjacent elements.
 
-        // Calculate extra space and spacing between panes
-        const extraSpace = Math.max(0, wrapperWidth - totalPanesWidth);
-        const spaceBetweenPanes = extraSpace / (this.state.totalPanes - 1);
-        // initial  offset by quarter pane + one space to center the panes if there is extra space
-        const initialOffset = extraSpace > 0 ? computedPaneWidth / 4 + spaceBetweenPanes : 0;
+        const initialOffset = extraSpace > 0 ? computedElementWidth * 0.25 + spaceBetweenElements : 0;
+
+        this.setState({
+            computedElementWidth,
+            spaceBetweenElements,
+            initialOffset
+        }, false);
+
+        // set the initial offset of the slider using relative positioning to make the future translation independent of the initial offset
+        this.style.left = `${initialOffset}px`;
 
 
-        // Position each pane absolutely
-        paneElements.forEach((pane, index) => {
-            // negating the result of _calculateTranslationForIndex to move the panes to the right
-            const xPosition = initialOffset - this._calculateTranslationForIndex(index);
-            pane.style.transform = `translateX(${xPosition}px)`;
-            pane.style.position = 'absolute';
-            pane.style.left = '0';
+        // Position each element
+        Array.from(elements).forEach((element, index) => {
+            // negating the result because the _calculateTranslationForIndex was made to calculate the translation for the slider, not the internal elements.
+            const xPosition = -this._calculateTranslationForIndex(index);
+            element.style.position = 'absolute';
+            element.style.left = `${xPosition}px`;
         });
 
-        // Store calculated values for later use
-        this.state.computedPaneWidth = computedPaneWidth;
-        this.state.spaceBetweenPanes = spaceBetweenPanes;
-        this.state.initialOffset = initialOffset;
+        // translate the slider to the active index
+        this.goToElement(this.state.activeIndex, false);
 
-        // Calculate and set wrapper position based on active index
-        this.state.sheetNewPosition = this._calculateTranslationForIndex(this.state.activeIndex);
-        this._container.style.transform = `translateX(${this.state.sheetNewPosition}px)`;
+
     }
 
     _calculateTranslationForIndex(index) {
-        if (index < 0 || index >= this.state.totalPanes) return null;
-        return -(index * (this.state.computedPaneWidth + this.state.spaceBetweenPanes));
+        if (index < 0 || index >= this.state.totalElements) return null;
+        // there is a minus sign because we are always gonna move towards the negative x-axis (the left) relative to slider initial position.
+        return -index * (this.state.computedElementWidth + this.state.spaceBetweenElements);
+
+
     }
 
-    goToPane(targetIndex, animate = true) {
 
-        // Calculate target position using pane width and spacing
+
+    goToElement(targetIndex, animate = true) {
+
+        // Calculate target position
         const targetPosition = this._calculateTranslationForIndex(targetIndex);
         if (targetPosition === null) return;
 
         // Calculate animation duration based on distance
-        const distance = Math.abs(targetPosition - this.state.sheetNewPosition);
+        const distance = Math.abs(targetPosition - this.state.sliderNewPosition);
         const duration = animate ? Math.min(Math.max(distance / 2500, 0.2), 0.3) : 0;
 
-        // Apply animation
-        this._container.style.transition = animate ? `transform ${duration}s ease-out` : 'none';
-        this._container.style.transform = `translateX(${targetPosition}px)`;
-
         // Update state
-        this.state.sheetNewPosition = targetPosition;
-        this.state.activeIndex = targetIndex;
+        this.setState({
+            sliderNewPosition: targetPosition,
+            activeIndex: targetIndex
+        }, false);
+
+        // Set up transition
+        this.style.transition = animate ? `transform ${duration}s ease-out` : 'none';
+        this.style.transform = `translateX(${targetPosition}px)`;
+
+
 
         //  To prevent animation during dragging. to follow the user's finger instantly.
         if (animate) {
-            this._container.addEventListener('transitionend', () => {
-                this._container.style.transition = 'none';
+            this.addEventListener('transitionend', () => {
+                this.style.transition = 'none';
             }, { once: true });
         }
 
@@ -208,28 +211,30 @@ export default class SlidablePanes extends Component {
         this.emitSlideEvent(targetIndex);
     }
 
-    nextPane(animate = true) {
-        this.goToPane(this.state.activeIndex + 1, animate);
+
+    nextElement(animate = true) {
+        this.goToElement(this.state.activeIndex + 1, animate);
     }
 
-    previousPane(animate = true) {
-        this.goToPane(this.state.activeIndex - 1, animate);
+    previousElement(animate = true) {
+        this.goToElement(this.state.activeIndex - 1, animate);
     }
 
     _handlePointerDown = (e) => {
-        this.state.isPointerDown = true;
-        // return the first touch x,y positions relative to the viewport
-        this.state.startX = e.clientX;
-        this.state.startY = e.clientY;
-        this.state.currentX = e.clientX;
-        this.state.sheetLastPosition = this.state.sheetNewPosition;
+        // Capture the pointer to ensure all events go to this element
         e.target.setPointerCapture(e.pointerId);
-        // store the time when the drag started to calculate the velocity
-        this.state.dragStartTime = Date.now();
+
+        this.setState({
+            isPointerDown: true,
+            startX: e.clientX,
+            startY: e.clientY,
+            currentX: e.clientX,
+            sliderLastPosition: this.state.sliderNewPosition,
+            dragStartTime: Date.now()
+        }, false); // Don't rerender as we're just storing values
     };
 
     _handlePointerMove = (e) => {
-
         if (!this.state.isPointerDown) return;
         const deltaX = e.clientX - this.state.startX;
         const deltaY = e.clientY - this.state.startY;
@@ -238,265 +243,277 @@ export default class SlidablePanes extends Component {
         if (!this.state.isDragging) {
             // Only start dragging if horizontal movement is greater, to ensures we don't interfere with vertical scrolling. also, we need to move at least 5px to start dragging.
             if (Math.abs(deltaX) > 5 && Math.abs(deltaX) > Math.abs(deltaY)) {
-                this.state.isDragging = true;
-                this._container.classList.add('dragging');
-                this._container.style.transition = 'none';
+                this.setState({ isDragging: true }, false);
+                this.classList.add('dragging');
+                this.style.transition = 'none';
             }
             return;
         }
 
-        this.state.currentX = e.clientX;
-        const dragDeltaX = this.state.currentX - this.state.startX;
-        let newTranslateX = this.state.sheetLastPosition + dragDeltaX;
+        const dragDeltaX = e.clientX - this.state.startX;
+        let newTranslateX = this.state.sliderLastPosition + dragDeltaX;
 
-        // Add resistance at bounds
-        const firstPanePosition = 0;
-        const lastPanePosition = this._calculateTranslationForIndex(this.state.totalPanes - 1);
+        // Apply bounds resistance
+        const firstElementPosition = 0;
+        const lastElementPosition = this._calculateTranslationForIndex(this.state.totalElements - 1);
 
 
-        if (newTranslateX > firstPanePosition) {
+        if (newTranslateX > firstElementPosition) {
             // only move 0.2 of the user's drag beyond the bounds
-            newTranslateX = firstPanePosition + (newTranslateX - firstPanePosition) * 0.2;
-        } else if (newTranslateX < lastPanePosition) {
-            newTranslateX = lastPanePosition + (newTranslateX - lastPanePosition) * 0.2;
+            newTranslateX = firstElementPosition + (newTranslateX - firstElementPosition) * 0.2;
+        } else if (newTranslateX < lastElementPosition) {
+            newTranslateX = lastElementPosition + (newTranslateX - lastElementPosition) * 0.2;
         }
 
-        this.state.sheetNewPosition = newTranslateX;
-        this._container.style.transform = `translateX(${newTranslateX}px)`;
+        this.setState({
+            currentX: e.clientX,
+            sliderNewPosition: newTranslateX
+        }, false);
+
+        // Update transform immediately for smooth dragging
+        this.style.transform = `translateX(${newTranslateX}px)`;
     };
 
     _handlePointerUp = (e) => {
-        this.state.isPointerDown = false;
-        // If we weren't dragging, no need for cleanup or calculations
-        if (!this.state.isDragging) return;
-        this.state.isDragging = false;
 
         if (e.pointerId) {
             e.target.releasePointerCapture(e.pointerId);
         }
 
-        this._container.classList.remove('dragging');
+        // If we weren't dragging, just reset pointer state
+        if (!this.state.isDragging) {
+            this.setState({ isPointerDown: false }, false);
+            return;
+        }
+
+        this.classList.remove('dragging');
+        this.setState({
+            isPointerDown: false,
+            isDragging: false
+        }, false);
+
 
         const deltaX = this.state.currentX - this.state.startX;
         const velocity = Math.abs(deltaX) / (Date.now() - this.state.dragStartTime);
+        // slide if the user moved more than a quarter of the element width or the velocity is high enough
+        const shouldSlide = Math.abs(deltaX) > (this.state.computedElementWidth * 0.25) || velocity > 0.3;
 
-        let newIndex = this.state.activeIndex;
+        if (shouldSlide) {
+            const newIndex = deltaX > 0
+                ? Math.max(0, this.state.activeIndex - 1)
+                : Math.min(this.state.totalElements - 1, this.state.activeIndex + 1);
 
-        // slide if either threshold or velocity is high enough
-        if (Math.abs(deltaX) > (this.state.computedPaneWidth * 0.25) || velocity > 0.3) {
-            if (deltaX > 0 && newIndex > 0) {
-                newIndex--;
-            } else if (deltaX < 0 && newIndex < this.state.totalPanes - 1) {
-                newIndex++;
-            }
+            this.goToElement(newIndex, true);
+        } else {
+            // Snap back to current element if movement wasn't enough
+            this.goToElement(this.state.activeIndex, true);
         }
-
-        // Animate to the new index
-        this.goToPane(newIndex, true);
     }
 
     _attachEventListeners() {
-        if (!this._container) return;
-
         // Add event listeners (using platform-agnostic pointer events)
-        this._container.addEventListener('pointerdown', this._handlePointerDown);
-        this._container.addEventListener('pointermove', this._handlePointerMove);
-        this._container.addEventListener('pointerup', this._handlePointerUp);
-        this._container.addEventListener('pointercancel', this._handlePointerUp);
+        this.addEventListener('pointerdown', this._handlePointerDown);
+        this.addEventListener('pointermove', this._handlePointerMove);
+        this.addEventListener('pointerup', this._handlePointerUp);
+        this.addEventListener('pointercancel', this._handlePointerUp);
+    }
+
+    _removeEventListeners() {
+        this.removeEventListener('pointerdown', this._handlePointerDown);
+        this.removeEventListener('pointermove', this._handlePointerMove);
+        this.removeEventListener('pointerup', this._handlePointerUp);
+        this.removeEventListener('pointercancel', this._handlePointerUp);
     }
 
     emitSlideEvent(index) {
         globalState.activeIndex = index;
-        const event = new CustomEvent(EventTypes.PANE_SLIDE, {
+        this.dispatchEvent(new CustomEvent(EventTypes.ELEMENT_SLIDE, {
             detail: { index },
             bubbles: true,
             composed: true
-        });
-        this.dispatchEvent(event);
+        }));
     }
 
 
+    _createDOM() {
+
+        this._shadow.innerHTML = `
+            <style>
+                /* add overflow hidden to the parent of the slider to hide the scroll bar */
+                :host {
+                    display: block;    /* Allows component to follow normal flow */
+                    position: relative; /* Reference for inner absolutely positioned elements */
+                    overflow: hidden;  /* Contain sliding elements */
+                    box-sizing: border-box;
+                    touch-action: pan-y;
+                    cursor: grab;
+                    will-change: transform;
+                }
+
+                ::slotted(*) {
+                    box-sizing: border-box;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    -webkit-overflow-scrolling: touch;
+                    /* inherit is not working for some reason, had to use the same value */
+                    touch-action: pan-y;
+                    user-select: none;
+                    -webkit-user-select: none;
+                }
+
+                :host(.dragging) {
+                    cursor: grabbing;
+                    user-select: none;
+                    -webkit-user-select: none;
+                }
+                
+            </style>
+
+            <slot></slot>
+        `;
+
+
+    }
+}
+
+customElements.define('elements-slider', ElementsSlider);
+// components/NavBar.js
+// components/NavBar.js
+import { EventTypes } from '../core/events.js';
+import Component from '../core/Component.js';
+import { globalState } from '../core/state.js';
+
+export default class NavBar extends Component {
+    static get observedAttributes() {
+        return ['items', 'active-index'];
+    }
+
+    constructor() {
+        super();
+        this.state = {
+            // Initialize with global state
+            activeIndex: globalState.activeIndex
+        };
+        // Bind methods
+        this._handleClick = this._handleClick.bind(this);
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+
+    }
+
+    _processAttributes() {
+        super._processAttributes();
+        // Parse items from JSON string if provided
+        if (this.props.items) {
+            try {
+                this.props.items = JSON.parse(this.props.items);
+
+            } catch (e) {
+                console.error('Invalid items JSON in NavBar:', e);
+                this.props.items = [];
+            }
+        }
+        // Parse active index
+        if (this.props['active-index']) {
+            this.state.activeIndex = parseInt(this.props['active-index']) || 0;
+        }
+    }
+
+    _handleClick(e) {
+        const item = e.target.closest('.nav-item');
+        if (item) {
+            const index = parseInt(item.dataset.index);
+            // Update state
+            globalState.activeIndex = index;
+            this.setState({ activeIndex: index });
+            // Emit event for other components
+            const event = new CustomEvent(EventTypes.NAV_ITEM_SELECTED, {
+                detail: { index },
+                bubbles: true,
+                composed: true
+            });
+            this.dispatchEvent(event);
+        }
+    }
+
+    _attachEventListeners() {
+        this._shadow.addEventListener('click', this._handleClick);
+    }
+
+    disconnectedCallback() {
+        this._shadow.removeEventListener('click', this._handleClick);
+    }
+
     render() {
+        let items = this.props.items || [];
+        const { activeIndex } = this.state;
+
         this._createStyles(`
             :host {
-                /* host width equation for optimal use should be: paneWidth + (wrapperWidth - totalPanesWidth) / totalPanes, assuming same unit used for width */
-
-                display: block;    /* Allows component to follow normal flow */
-                position: relative; /* Reference for inner absolutely positioned elements */
-                overflow: hidden;  /* Contain sliding panes */
-                box-sizing: border-box;
-                user-select: none;
-                -webkit-user-select: none;
-                width: ${this.state.width};
-                height: ${this.state.height};
-                
-            }
-
-            *, *::before, *::after {
-                box-sizing: inherit;
-            }
-
-            .wrapper {
-                /* for testing setting width bigger */
-                position: relative;
-                width: ${this.state.wrapperWidth};
-                height: ${this.state.wrapperHeight};
-                will-change: transform;
-                cursor: grab;
-                touch-action: pan-y;
-                
-                
-            }
-                
-            .wrapper.dragging {
-                cursor: grabbing;
-            }
-            
-            .pane {
-                position: absolute;
+                display: block;
+                position: fixed;
+                bottom: 0;
                 left: 0;
-                width: ${this.state.paneWidth};
-                min-width: ${this.state.paneWidth};
-                height: ${this.state.paneHeight};
-                padding: ${this.state.padding};
-                overflow-y: auto;     /* Enables vertical scrolling within pane */
-                overflow-x: hidden;   /* Prevents horizontal scrolling within pane */
-                -webkit-overflow-scrolling: touch;
-                /* prevent the browser from handling scrolling/panning x gestures, to avoid firing pointercancel events */
-                touch-action: pan-y;
-                
-            }
-            
-            /* Prevent pane content selection during drag */
-            .dragging {
-                user-select: none;
-                -webkit-user-select: none;
-            }
-            
-            /* Hide scrollbar for WebKit browsers */
-            .pane::-webkit-scrollbar {
-                display: none;
+                right: 0;
+                background: rgba(250, 250, 250, 0.95);
+                -webkit-backdrop-filter: blur(10px);
+                backdrop-filter: blur(10px);
+                border-top: 0.5px solid rgba(0, 0, 0, 0.2);
+                padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
             }
 
-            /* select first pane and add background color for testing */
-            .pane:nth-child(1) {
-                background-color: hsla(0, 70%, 85%, 0.5);
-                color: rgba(0, 0, 0, 0.7);
-            }
-            .pane:nth-child(2) {
-                background-color: hsla(120, 70%, 85%, 0.5);
-                color: rgba(0, 0, 0, 0.7);
-            }
-            .pane:nth-child(3) {
-                background-color: hsla(240, 70%, 85%, 0.5);
-                color: rgba(0, 0, 0, 0.7);
+            .nav-container {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                height: 55px;
+                max-width: 500px;
+                margin: 0 auto;
             }
 
+            .nav-item {
+                flex: 1;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100%;
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .nav-icon {
+                width: 32px;
+                height: 32ppx;
+                transition: color 0.2s ease;
+                color: #8E8E93;
+            }
+
+            .nav-item.active .nav-icon {
+                color: #007AFF;
+            }
         `);
 
 
-        // DOM elements with 'slot' attributes are projected into Shadow DOM corresponding slots rather than being automatically rendered by the browser.
-        const panes = Array(this.state.totalPanes).fill(0).map((_, index) => `
-            <div class="pane">
-                <slot name="pane-${index}"></slot>
-            </div>
-        `).join('');
-
+        // we can optionally pass other viewBox values in case of using SVGs with different viewBox values (e.g., using google fonts icons that uses viewBox: "0 -960 960 960")
         this._shadow.innerHTML = `
-            <div class="wrapper">
-                ${panes}
+            <div class="nav-container">
+                ${items.map((item, index) => `
+                    <div class="nav-item ${index === activeIndex ? 'active' : ''}" data-index="${index}">
+                        <svg class="nav-icon" viewBox="${item.viewBox || '0 0 24 24'}" fill="currentColor">
+                            <path d="${item.icon}"/>
+                        </svg>
+                    </div>
+                `).join('')}
             </div>
         `;
         // Attach event listeners after rendering
         this._attachEventListeners();
-
     }
 }
 
-customElements.define('slidable-panes', SlidablePanes);
-
-// core/Component.js
-export default class Component extends HTMLElement {
-    constructor() {
-        super();
-        this.state = {};
-        this.props = {};
-        this._shadow = this.attachShadow({ mode: 'open' });
-    }
-
-    // Lifecycle methods
-    connectedCallback() {
-        this._processAttributes();
-        this.render();
-        this._attachEventListeners();
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue !== newValue) {
-            // calling this._processAttributes() because sometimes the attributeChangedCallback is called before connectedCallback which results in rendering without processing the attributes, especially for the first load.
-            this._processAttributes();
-            this.render();
-        }
-    }
-
-    // State management
-    setState(newState, rerender = true) {
-        this.state = { ...this.state, ...newState };
-        if (rerender) {
-            this.render();
-        }
-    }
-
-    // Process attributes into props
-    _processAttributes() {
-        const attributes = this.getAttributeNames();
-        attributes.forEach(attr => {
-            const value = this.getAttribute(attr);
-            this.props[attr] = value;
-        });
-    }
-
-    // Abstract methods to be implemented by child classes
-    render() {
-        throw new Error('Render method must be implemented');
-    }
-
-    _attachEventListeners() {
-        // Override in child components if needed
-    }
-
-    // Utility methods
-    _createStyles(styles) {
-        const styleSheet = new CSSStyleSheet();
-        styleSheet.replaceSync(styles);
-        this._shadow.adoptedStyleSheets = [styleSheet];
-    }
-}
-
-// main.js
-// the controller that listens to the events (by using document.addEventListener) and calls the setState method of the other components that should react to a given event.
-
-import { EventTypes } from 'web_lib/core/events.js';
-import { globalState } from 'web_lib/core/state.js';
-
-document.addEventListener(EventTypes.PANE_SLIDE, (e) => {
-    // Check the id of the element that dispatched the event
-    const sourceId = e.target.id;
-    switch (sourceId) {
-        case 'main-screens':
-            globalState.activeIndex = e.detail.index;
-            const navBar = document.querySelector('nav-bar');
-            navBar.setState({ activeIndex: e.detail.index });
-            break;
-    }
-
-});
-
-
-document.addEventListener(EventTypes.NAV_ITEM_SELECTED, (e) => {
-    const slidablePanes = document.querySelector('slidable-panes');
-    slidablePanes.setState({ activeIndex: e.detail.index }, false);
-});;
+customElements.define('nav-bar', NavBar);
 
 // index.html
 < !DOCTYPE html >
@@ -520,8 +537,10 @@ document.addEventListener(EventTypes.NAV_ITEM_SELECTED, (e) => {
                             html,
                             body {
                                 height: 100%;
+                            width: 100%;
                             line-height: 1.6;
                             -webkit-font-smoothing: antialiased;
+                            overflow-x: hidden;
         }
 
                             img,
@@ -550,49 +569,58 @@ document.addEventListener(EventTypes.NAV_ITEM_SELECTED, (e) => {
                                 overflow - wrap: break-word;
         }
 
-        /* center the slidable panes in the middle of the screen */
-        /* #main-screens {
-                                margin: auto;
-                            position: relative;
-                            top: 25%;
-            
-        } */
-                            /* add background color to the body and the slidable panes */
 
-                            body {
-                                background - color: #f0f0f0;
+                            /* add different nice background colors to each page */
+                            .page:nth-child(1) {
+                                background - color: #f1c40f;
         }
 
-                            #main-screens {
-                                background - color: #fff;
+                            .page:nth-child(2) {
+                                background - color: #e74c3c;
+        }
+
+                            .page:nth-child(3) {
+                                background - color: #3498db;
+        }
+
+                            /* select custom element direct children */
+                            elements-slider {
+                                width: 198vw;
+                            height: 100vh;
+            >div{
+                                width: 66vw;
+                            height: 100vh;
+            }
         }
                         </style>
                         <script type="module">
-                            import 'web_lib/components/NavBar.js';
-                            import 'web_lib/components/SlidablePanes.js';
+        // import 'web_lib/components/NavBar.js';
+                            import 'web_lib/components/ElementsSlider.js';
                         </script>
                     </head>
 
                     <body>
-                        <slidable-panes id="main-screens" total-panes="3" width="36vw" height="30vh" wrapper-width="66vw" pane-width="20vw"
-                            pane-height="30vh">
-                            <div slot="pane-0">
-                                <h1>Pane 1 Content</h1>
+                        <elements-slider>
+                            <!-- here goes the three pages with simple content -->
+                            <div class="page">
+                                <h1>Page 1</h1>
+                                <p>Content of page 1</p>
                             </div>
-                            <div slot="pane-1">
-                                <h1>Pane 2 Content</h1>
+                            <div class="page">
+                                <h1>Page 2</h1>
+                                <p>Content of page 2</p>
                             </div>
-                            <div slot="pane-2">
-                                <h1>Pane 3 Content</h1>
+                            <div class="page">
+                                <h1>Page 3</h1>
+                                <p>Content of page 3</p>
                             </div>
-                        </slidable-panes>
+                        </elements-slider>
 
-                        <!-- I've used claude opus to generate these SVGs. we set the active index to 1 in the global state -->
-                        <nav-bar items='[
-    {"icon": "M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"},
-    {"icon": "M153.3-189.06v-376.49q0-17.99 7.92-34.03 7.92-16.04 22.26-26.56l250.94-188.32q19.92-15.25 45.47-15.25 25.55 0 45.69 15.25l250.94 188.32q14.34 10.52 22.34 26.56t8 34.03v376.49q0 31.49-22.22 53.62-22.21 22.14-53.7 22.14H599.47q-16 0-26.94-10.94-10.94-10.94-10.94-26.94v-212.54q0-16-10.93-26.94-10.94-10.93-26.94-10.93h-87.44q-16 0-26.94 10.93-10.93 10.94-10.93 26.94v212.54q0 16-10.94 26.94-10.94 10.94-26.94 10.94H229.06q-31.49 0-53.62-22.14-22.14-22.13-22.14-53.62Z", "viewBox": "0 -960 960 960"},
-    {"icon": "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"}
-    ]'></nav-bar>
+                        <!-- <nav-bar items='[
+        {"icon": "M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"},
+        {"icon": "M153.3-189.06v-376.49q0-17.99 7.92-34.03 7.92-16.04 22.26-26.56l250.94-188.32q19.92-15.25 45.47-15.25 25.55 0 45.69 15.25l250.94 188.32q14.34 10.52 22.34 26.56t8 34.03v376.49q0 31.49-22.22 53.62-22.21 22.14-53.7 22.14H599.47q-16 0-26.94-10.94-10.94-10.94-10.94-26.94v-212.54q0-16-10.93-26.94-10.94-10.93-26.94-10.93h-87.44q-16 0-26.94 10.93-10.93 10.94-10.93 26.94v212.54q0 16-10.94 26.94-10.94 10.94-26.94 10.94H229.06q-31.49 0-53.62-22.14-22.14-22.13-22.14-53.62Z", "viewBox": "0 -960 960 960"},
+        {"icon": "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"}
+        ]'></nav-bar> -->
 
                         <script type="module">
                             import './main.js'

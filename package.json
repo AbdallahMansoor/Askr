@@ -1,6 +1,4 @@
 {
-  "//": "Parcel error (Error: ENOENT: no such file or directory, unlink) disappeared when I downgraded npm version to ^8.8.1 (the error didn't happen again even when updated back to the latest version).",
-  "//": "you can trigger parcel rebuild by hitting ctrl + s even if there is no change in the files",
   "devDependencies": {
     "install": "^0.13.0",
     "npm": "^9.8.1",
@@ -12,17 +10,16 @@
       "posthtml-include": {}
     }
   },
-  "//": "path to the web_lib folder",
   "alias": {
     "web_lib": "./web_lib/"
   },
   "@parcel/transformer-css": {
     "drafts": {
-      "nesting": true
     }
   },
+  "//" : "using --no-hmr as a workaround for parcel crashing when rebuilding",
   "scripts": {
-    "dev": "parcel --no-cache index.html",
+    "dev": "parcel --no-cache --no-hmr index.html",
     "build": "parcel build index.html"
   }
 }

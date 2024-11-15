@@ -3,26 +3,25 @@ export default class Component extends HTMLElement {
     constructor() {
         super();
         this.state = {};
-        this.props = {};
         this._shadow = this.attachShadow({ mode: 'open' });
     }
 
     // Lifecycle methods
     connectedCallback() {
-        this._processAttributes();
         this.render();
-        this._attachEventListeners();
+    }
+
+    disconnectedCallback() {
+        this._removeEventListeners();
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue !== newValue) {
-            // calling this._processAttributes() because sometimes the attributeChangedCallback is called before connectedCallback which results in rendering without processing the attributes, especially for the first load.
-            this._processAttributes();
-            this.render();
-        }
+        if (oldValue === newValue) return;
+        // Convert kebab-case to camelCase 
+        const camelCase = name.replace(/-([a-z])/g, g => g[1].toUpperCase());
+        this.setState({ [camelCase]: newValue });
     }
 
-    // State management
     setState(newState, rerender = true) {
         const potentialNewState = { ...this.state, ...newState };
         const stateChanged = JSON.stringify(potentialNewState) !== JSON.stringify(this.state);
@@ -34,28 +33,41 @@ export default class Component extends HTMLElement {
 
     }
 
-    // Process attributes into props
-    _processAttributes() {
-        const attributes = this.getAttributeNames();
-        attributes.forEach(attr => {
-            const value = this.getAttribute(attr);
-            this.props[attr] = value;
+    // Abstract methods to be implemented by child classes
+    render() {
+        this._createDOM();
+        // use requestAnimationFrame to ensure elements are laid out before calculating or setting up layout
+        requestAnimationFrame(() => {
+            this._setupLayout();
+            this._attachEventListeners();
         });
     }
 
-    // Abstract methods to be implemented by child classes
-    render() {
-        throw new Error('Render method must be implemented');
+    _createDOM() {
+        // Override in child components if needed
+    }
+
+    _setupLayout() {
+        // Override in child components if needed
     }
 
     _attachEventListeners() {
         // Override in child components if needed
     }
 
+    _removeEventListeners() {
+        // Override in child components if needed
+    }
+
     // Utility methods
-    _createStyles(styles) {
+    _createStyles(styles, target = 'shadow') {
         const styleSheet = new CSSStyleSheet();
         styleSheet.replaceSync(styles);
-        this._shadow.adoptedStyleSheets = [styleSheet];
+        if (target === 'shadow') {
+            this._shadow.adoptedStyleSheets = [styleSheet];
+        } else {
+            // in case we need to style any elements within slotted and avoid the limitations of ::slotted() selector.
+            document.adoptedStyleSheets = [...document.adoptedStyleSheets, styleSheet];
+        }
     }
 }
