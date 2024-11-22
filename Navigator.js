@@ -2,18 +2,7 @@ import { globalState } from './state.js';
 export class Navigator {
     constructor() {
         this.routes = new Map();
-        this.currentRoute = window.location.pathname;
-
-        // On initial load, validate current route
-        if (!this._findHandler(this.currentRoute)) {
-            const defaultScreen = globalState.MAIN_SCREENS.find(s => s.default)?.path;
-            // Replace invalid URL with default (doesn't add to history)
-            history.replaceState({}, '', defaultScreen);
-            this.navigate(defaultScreen, {}, true);
-        } else {
-            // Valid initial route, just execute its handler
-            this.navigate(this.currentRoute, {}, true);
-        }
+        this.currentRoute = null;
 
         window.addEventListener('popstate', (e) => {
             this.navigate(window.location.pathname, e.state || {}, true);

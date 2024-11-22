@@ -21,3 +21,15 @@ navigator.registerRoute('/:mainscreens', ({ to, params, data }) => {
     navBar.setState({ activeIndex: index });
     elementsSlider.setState({ activeIndex: index }, false);
 });
+
+// On initial load, validate current route
+const initialRoute = window.location.pathname;
+if (!navigator._findHandler(initialRoute)) {
+    const defaultScreen = globalState.MAIN_SCREENS.find(s => s.default)?.path;
+    // Replace invalid URL with default (doesn't add to history)
+    history.replaceState({}, '', defaultScreen);
+    navigator.navigate(defaultScreen, {}, true);
+} else {
+    // Valid initial route, just execute its handler
+    navigator.navigate(initialRoute, {}, true);
+}
