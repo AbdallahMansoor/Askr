@@ -9,11 +9,16 @@ import { Navigator } from './Navigator.js';
 const navigator = new Navigator();
 const eventRouter = new EventRouter(navigator);
 
-navigator.registerRoute('/:mainscreens', ({ to, params, data }) => {
-    // Get index from the path itself
+navigator.registerRouteHandler('/:mainscreens', ({ to, params, data }) => {
+    // get index from the path
     const index = globalState._getIndexFromPaths(to, globalState.MAIN_SCREENS);
+    if (index === null) {
+        const defaultScreen = globalState.MAIN_SCREENS.find(s => s.default)?.path;
+        navigator.navigate(defaultScreen, {}, true);
+        return;
+    }
+
     globalState.activeIndex = index;
-    if (index === null) return;
 
     const navBar = document.querySelector('nav-bar');
     const elementsSlider = document.querySelector('elements-slider');

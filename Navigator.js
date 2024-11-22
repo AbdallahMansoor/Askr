@@ -10,13 +10,15 @@ export class Navigator {
     }
 
     navigate(to, transitionData = {}, skipPushState = false) {
+        if (to === this.currentRoute) return;
+
         const from = this.currentRoute;
         const result = this._findHandler(to);
         if (!result) return;
 
         const { routeHandler, params } = result;
 
-        if (!skipPushState) {
+        if (!skipPushState && window.location.pathname !== to) {
             history.pushState(transitionData, '', to);
         }
 
@@ -60,7 +62,7 @@ export class Navigator {
         return null;
     }
 
-    registerRoute(path, handler) {
+    registerRouteHandler(path, handler) {
         this.routes.set(path, handler);
     }
 }
