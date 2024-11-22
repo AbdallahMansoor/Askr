@@ -5,7 +5,6 @@ assuming that we are using the same length unit(vw, px, etc), h is the width of 
 // components/SlidableSheet.js
 import { EventTypes } from '../core/events.js';
 import Component from '../core/Component.js';
-import { globalState } from '../core/state.js';
 
 export default class ElementsSlider extends Component {
     // browser will automatically check observedAttributes when attributeChangedCallback is fired
@@ -19,7 +18,7 @@ export default class ElementsSlider extends Component {
     constructor() {
         super();
         this.state = {
-            activeIndex: globalState.activeIndex,
+            activeIndex: 0,
             isDragging: false,
             isPointerDown: false,
             startX: null,
@@ -278,7 +277,6 @@ export default class ElementsSlider extends Component {
     }
 
     emitSlideEvent(index) {
-        globalState.activeIndex = index;
         this.dispatchEvent(new CustomEvent(EventTypes.ELEMENT_SLIDE, {
             detail: { index },
             bubbles: true,

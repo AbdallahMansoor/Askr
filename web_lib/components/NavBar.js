@@ -1,7 +1,6 @@
 // components/NavBar.js
 import { EventTypes } from '../core/events.js';
 import Component from '../core/Component.js';
-import { globalState } from '../core/state.js';
 
 export default class NavBar extends Component {
     // browser will automatically check observedAttributes when attributeChangedCallback is fired
@@ -12,8 +11,7 @@ export default class NavBar extends Component {
     constructor() {
         super();
         this.state = {
-            // Initialize with global state
-            activeIndex: globalState.activeIndex
+            activeIndex: 0,
         };
         // Bind methods
         this._handleClick = this._handleClick.bind(this);
@@ -24,7 +22,6 @@ export default class NavBar extends Component {
         if (item) {
             const index = parseInt(item.dataset.index);
             // Update state
-            globalState.activeIndex = index;
             this.setState({ activeIndex: index });
             // Emit event for other components
             const event = new CustomEvent(EventTypes.NAV_ITEM_SELECTED, {

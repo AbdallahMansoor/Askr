@@ -1,0 +1,158 @@
+app/GlobalState.js
+class GlobalState {
+    constructor() {
+        // Just the configuration, no route handling
+        this.MAIN_SCREENS = [
+            { path: '/inbox', index: 0 },
+            { path: '/home', index: 1, default: true },
+            { path: '/profile', index: 2 }
+        ];
+    }
+
+    _getIndexFromPaths(path, paths) {
+        return paths.find(config => config.path === path)?.index ?? null;
+    }
+
+    static getInstance() {
+        if (!GlobalState._instance) {
+            GlobalState._instance = new GlobalState();
+        }
+        return GlobalState._instance;
+    }
+}
+
+export const globalState = GlobalState.getInstance();
+
+//app/EventRouter.js
+import { EventTypes } from 'web_lib/core/events.js';
+import { globalState } from './state.js';
+
+export class EventRouter {
+    constructor(navigator) {
+        this.navigator = navigator;
+        this._setupEventListeners();
+    }
+
+    _setupEventListeners() {
+        document.addEventListener(EventTypes.ELEMENT_SLIDE, e => {
+            if (e.target.id === 'main-slider') {
+                const screen = globalState.MAIN_SCREENS[e.detail.index];
+                if (screen) {
+                    this.navigator.navigate(screen.path);
+                }
+            }
+        });
+
+        document.addEventListener(EventTypes.NAV_ITEM_SELECTED, e => {
+            const screen = globalState.MAIN_SCREENS[e.detail.index];
+            if (screen) {
+                // No need to pass index anymore
+                this.navigator.navigate(screen.path);
+            }
+        });
+
+    }
+}
+
+//app/Navigator.js
+import { globalState } from './state.js';
+export class Navigator {
+    constructor() {
+        this.routes = new Map();
+        this.currentRoute = window.location.pathname;
+
+        // On initial load, validate current route
+        if (!this._findHandler(this.currentRoute)) {
+            const defaultScreen = globalState.MAIN_SCREENS.find(s => s.default)?.path;
+            this.navigate(defaultScreen, {}, true);
+        } else {
+            // Valid initial route, just execute its handler
+            this.navigate(this.currentRoute, {}, true);
+        }
+
+        window.addEventListener('popstate', (e) => {
+            this.navigate(window.location.pathname, e.state || {}, true);
+        });
+    }
+
+    navigate(to, transitionData = {}, skipPushState = false) {
+        const from = this.currentRoute;
+        const result = this._findHandler(to);
+        if (!result) return;
+
+        const { routeHandler, params } = result;
+
+        if (!skipPushState) {
+            history.pushState(transitionData, '', to);
+        }
+
+        routeHandler({
+            to,
+            from,
+            params,
+            data: transitionData
+        });
+
+        this.currentRoute = to;
+    }
+
+    
+
+    _findHandler(path) {
+        for (const [pattern, handler] of this.routes) {
+            // Convert route pattern to regex
+            // e.g., '/article/:id' becomes /^\/article\/([^\/]+)$/
+            const regexPattern = pattern
+                .replace(/:[^/]+/g, '([^/]+)')      // convert :param to capture group
+                .replace(/\//g, '\\/');     // escape forward slashes
+
+            const regex = new RegExp(`^${regexPattern}$`);
+            const match = path.match(regex);
+
+            if (match) {
+                const paramNames = (pattern.match(/:[^/]+/g) || [])
+                    .map(param => param.slice(1));
+
+                const params = {};
+                paramNames.forEach((name, index) => {
+                    params[name] = match[index + 1];
+                });
+
+                return {
+                    handler,
+                    params
+                };
+            }
+        }
+        return null;
+    }
+
+    registerRoute(path, handler) {
+        this.routes.set(path, handler);
+    }
+}
+
+//app/main.js
+import { EventTypes } from 'web_lib/core/events.js';
+import { Transitions } from 'web_lib/core/transitions.js';
+import { globalState } from './state.js';
+import { EventRouter } from './EventRouter.js';
+import { Navigator } from './Navigator.js';
+
+
+
+const navigator = new Navigator();
+const eventRouter = new EventRouter(navigator);
+
+navigator.registerRoute('/:mainscreens', ({ to, params, data }) => {
+    // Get index from the path itself
+    const index = globalState._getIndexFromPaths(to, globalState.MAIN_SCREENS);
+    globalState.activeIndex = index;
+    if (index === null) return;
+
+    const navBar = document.querySelector('nav-bar');
+    const elementsSlider = document.querySelector('elements-slider');
+
+    navBar.setState({ activeIndex: index });
+    elementsSlider.setState({ activeIndex: index }, false);
+});
