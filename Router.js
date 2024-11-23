@@ -1,15 +1,15 @@
 import { globalState } from './state.js';
-export class Navigator {
+export class Router {
     constructor() {
         this.routes = new Map();
         this.currentRoute = null;
 
         window.addEventListener('popstate', (e) => {
-            this.navigate(window.location.pathname, e.state || {}, true);
+            this.handleRoute(window.location.pathname, e.state || {}, true);
         });
     }
 
-    navigate(to, transitionData = {}, skipPushState = false) {
+    handleRoute(to, transitionData = {}, skipPushState = false) {
         if (to === this.currentRoute) return;
 
         const from = this.currentRoute;

@@ -13,4 +13,6 @@ export class Transitions {
             element.style.transform = 'translateX(0)';
         });
     }
+
+    // todo: add shared element transition that takes two elements, the source and the target
 }

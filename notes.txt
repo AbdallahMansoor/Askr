@@ -1,8 +1,11 @@
-- ROUTING
-- do we really need routing??
+- what if we go to initial nested route, I think the preceding pages will not be constructed?! (e.g. link sharing)
 - decide which type of transition to use when navigating from a main to details screen, e.g. the settings in NGL
+
+
+
+-------------------------------------------
+- ask for what is the best and cost saving way for my design of backend where I just need to process the first request with a programming language to detect if it's IOS or Android, then serve the static app files.
 - keep native android/ios screens/UI minimal as possible, to have full control and remote updates.
-- ask the user to connect to the internet if they are not, you don't have to handle that.
+- ask the user to connect to the internet if they are not. use service workers for the offline page.
 - encourage IOS users to add the webApp to their home screen.
-- check internet connection and handle offline state by service workers.
 

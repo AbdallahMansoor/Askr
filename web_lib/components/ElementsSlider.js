@@ -18,7 +18,7 @@ export default class ElementsSlider extends Component {
     constructor() {
         super();
         this.state = {
-            activeIndex: 0,
+            activeIndex: null,
             isDragging: false,
             isPointerDown: false,
             startX: null,
