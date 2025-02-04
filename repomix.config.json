@@ -1,0 +1,25 @@
+{
+  "output": {
+    "filePath": "packed-repo",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "topFilesLength": 5,
+    "showLineNumbers": false,
+    "directoryStructure": true,
+    "includeEmptyDirectories": true
+    
+
+  },
+  "include": [],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "*.log",
+      "repomix.config.json"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  }
+}

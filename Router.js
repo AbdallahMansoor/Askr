@@ -1,3 +1,4 @@
+// Todo: add docs to the whole routing thing
 import { globalState } from './state.js';
 export class Router {
     constructor() {
