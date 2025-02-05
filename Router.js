@@ -22,7 +22,7 @@ export class Router {
             history.pushState(transitionData, '', to);
         }
 
-        // routeHandler is the anonymous function passed during the registration of the route in main.js.
+        // routeHandler is the anonymous callback function passed during the registration of the route in main.js.
         routeHandler({
             to,
             from,
@@ -44,6 +44,7 @@ export class Router {
                 .replace(/\//g, '\\/');   // escape forward slashes
 
             const regex = new RegExp(`^${regexPattern}$`);
+            // The matching is reliable because the static parts of the route serve as anchors(signatures) for a given route.
             const match = path.match(regex);
 
             if (match) {
