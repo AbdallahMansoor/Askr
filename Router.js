@@ -1,4 +1,3 @@
-// Todo: add docs to the whole routing thing
 import { globalState } from './state.js';
 export class Router {
     constructor() {
@@ -23,6 +22,7 @@ export class Router {
             history.pushState(transitionData, '', to);
         }
 
+        // routeHandler is the anonymous function passed during the registration of the route in main.js.
         routeHandler({
             to,
             from,
@@ -35,12 +35,13 @@ export class Router {
 
 
     _findHandler(path) {
+        // loop for every registered route (e.g., '/') and its handler. (as registered in main.js)
         for (const [pattern, routeHandler] of this.routes) {
             // Convert route pattern to regex
             // e.g., '/article/:id' becomes /^\/article\/([^\/]+)$/
             const regexPattern = pattern
-                .replace(/:[^/]+/g, '([^/]+)')      // convert :param to capture group
-                .replace(/\//g, '\\/');     // escape forward slashes
+                .replace(/:[^/]+/g, '([^/]+)')  // convert :param to capture group (e.g., :mainscreens -> ([^/]+))
+                .replace(/\//g, '\\/');   // escape forward slashes
 
             const regex = new RegExp(`^${regexPattern}$`);
             const match = path.match(regex);

@@ -1,3 +1,5 @@
+// To ensure high decoupling, I have designed a two layer routing system. The first layer (EventRouter) maps certain user interactions (i.e events) to routes. The second layer (Router) receives the route request, find the appropriate handler (from the ones registered in the main.js script) and calls it.
+
 import { EventTypes } from 'web_lib/core/events.js';
 import { globalState } from './state.js';
 
