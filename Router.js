@@ -40,7 +40,7 @@ export class Router {
             // Convert route pattern to regex
             // e.g., '/article/:id' becomes /^\/article\/([^\/]+)$/
             const regexPattern = pattern
-                .replace(/:[^/]+/g, '([^/]+)')  // convert :param to capture group (e.g., :mainscreens -> ([^/]+))
+                .replace(/:[^/]+/g, '([^/]+)')  // convert :param to capture group (e.g., :mainscreen -> ([^/]+))
                 .replace(/\//g, '\\/');   // escape forward slashes
 
             const regex = new RegExp(`^${regexPattern}$`);

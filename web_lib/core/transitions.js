@@ -14,5 +14,5 @@ export class Transitions {
         });
     }
 
-    // todo: add shared element transition that takes two elements, the source and the target
+    // todo: add shared element transition that takes two elements, the source and the target. MyRepo have a draft MorphToElement.js that can be used as a reference.
 }
