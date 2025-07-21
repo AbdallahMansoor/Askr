@@ -1,25 +1,31 @@
 {
-  "devDependencies": {
-    "install": "^0.13.0",
-    "npm": "^9.8.1",
-    "parcel": "^2.9.3",
-    "posthtml-include": "^1.7.4"
-  },
-  "posthtml": {
-    "plugins": {
-      "posthtml-include": {}
+    "devDependencies": {
+        "install": "^0.13.0",
+        "npm": "^9.8.1",
+        "parcel": "^2.9.3",
+        "posthtml-include": "^1.7.4",
+        "@tailwindcss/postcss": "^4.1.11"
+    },
+    "posthtml": {
+        "plugins": {
+            "posthtml-include": {}
+        }
+    },
+    "//": "U still have to include tailwind in your CSS for it to work. Additionally, the @import statement should be in a .css file for the tailwind intellisense extension to work.",
+    "postcss": {
+        "plugins": {
+            "@tailwindcss/postcss": {}
+        }
+    },
+    "alias": {
+        "web_lib": "./web_lib/"
+    },
+    "@parcel/transformer-css": {
+        "drafts": {}
+    },
+    "//": "Use --no-hmr as a workaround for parcel crashing when rebuilding",
+    "scripts": {
+        "dev": "parcel --no-cache index.html",
+        "build": "parcel build index.html"
     }
-  },
-  "alias": {
-    "web_lib": "./web_lib/"
-  },
-  "@parcel/transformer-css": {
-    "drafts": {
-    }
-  },
-  "//" : "using --no-hmr as a workaround for parcel crashing when rebuilding",
-  "scripts": {
-    "dev": "parcel --no-cache --no-hmr index.html",
-    "build": "parcel build index.html"
-  }
 }
