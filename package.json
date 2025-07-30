@@ -1,31 +1,41 @@
 {
-    "devDependencies": {
-        "install": "^0.13.0",
-        "npm": "^9.8.1",
-        "parcel": "^2.9.3",
-        "posthtml-include": "^1.7.4",
-        "@tailwindcss/postcss": "^4.1.11"
-    },
-    "posthtml": {
-        "plugins": {
-            "posthtml-include": {}
-        }
-    },
-    "//": "U still have to include tailwind in your CSS for it to work. Additionally, the @import statement should be in a .css file for the tailwind intellisense extension to work.",
-    "postcss": {
-        "plugins": {
-            "@tailwindcss/postcss": {}
-        }
-    },
-    "alias": {
-        "web_lib": "./web_lib/"
-    },
-    "@parcel/transformer-css": {
-        "drafts": {}
-    },
-    "//": "Use --no-hmr as a workaround for parcel crashing when rebuilding",
-    "scripts": {
-        "dev": "parcel --no-cache index.html",
-        "build": "parcel build index.html"
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "install": "^0.13.0",
+    "npm": "^9.8.1",
+    "parcel": "^2.9.3",
+    "posthtml-include": "^1.7.4",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14"
+  },
+  "posthtml": {
+    "plugins": {
+      "posthtml-include": {}
     }
+  },
+  "// postcss": "You still have to import tailwind in your CSS for it to work. Additionally, there should be a .css file in the project directory that imports tailwind (i.e. @import \"tailwindcss\";) for the tailwind intellisense extension to work.",
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
+  },
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ]
+  },
+  "alias": {
+    "web_lib": "./web_lib/"
+  },
+  "@parcel/transformer-css": {
+    "drafts": {}
+  },
+  "// scripts": "Use --no-hmr as a workaround for parcel crashing when rebuilding",
+  "scripts": {
+    "dev": "parcel --no-cache index.html",
+    "build": "parcel build index.html"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.9"
+  }
 }
